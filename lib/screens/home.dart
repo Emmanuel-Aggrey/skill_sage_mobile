@@ -16,6 +16,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   List<dynamic> filteredJobs = [];
   bool isSkillRecommendationsExpanded = true;
 
+  ScrollController? _jobListScrollController;
+  double _lastScrollOffset = 0.0;
+
   // Animation controllers
   late AnimationController _fabAnimationController;
   late AnimationController _listAnimationController;
@@ -25,6 +28,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   void initState() {
     super.initState();
+    _jobListScrollController = ScrollController();
+    _jobListScrollController!.addListener(_onJobListScroll);
     _loadAllJobs();
     _loadSkillRecommendations();
 
@@ -62,7 +67,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void dispose() {
     _fabAnimationController.dispose();
     _listAnimationController.dispose();
+    _jobListScrollController?.removeListener(_onJobListScroll);
+    _jobListScrollController?.dispose();
     super.dispose();
+  }
+
+  void _onJobListScroll() {
+    if (_jobListScrollController == null) return;
+
+    final currentScrollOffset = _jobListScrollController!.offset;
+
+    // Hide skills when scrolling down (away from top)
+    if (currentScrollOffset > _lastScrollOffset &&
+        isSkillRecommendationsExpanded &&
+        currentScrollOffset > 30) {
+      // Hide when scrolling down
+      setState(() {
+        isSkillRecommendationsExpanded = false;
+      });
+    }
+    // Show skills when scrolling back to top
+    else if (currentScrollOffset <= 20 && !isSkillRecommendationsExpanded) {
+      setState(() {
+        isSkillRecommendationsExpanded = true;
+      });
+    }
+
+    _lastScrollOffset = currentScrollOffset;
   }
 
   Future<void> _loadAllJobs() async {
@@ -450,6 +481,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         child: filteredJobs.isEmpty
                             ? _buildEmptyState(textTheme)
                             : ListView.builder(
+                                controller: _jobListScrollController,
                                 physics: const BouncingScrollPhysics(),
                                 itemCount: filteredJobs.length,
                                 padding: const EdgeInsets.only(bottom: 20),

@@ -91,35 +91,32 @@ class SkillCard extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               leading: Container(
                 margin: const EdgeInsets.only(top: 5),
-                width: 35,
-                height: 35,
+                width: 0,
+                height: 0,
                 decoration: BoxDecoration(
-                  color: isUserSkill
-                      ? Colors.green.withOpacity(.2)
-                      : isMissingSkill
-                          ? Colors.orange.withOpacity(.2)
-                          : appTheme.primary.withOpacity(.2),
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                child: Center(
-                  child: Text(
-                    title.toString()[0],
-                    style: textTheme.labelMedium?.copyWith(
-                      color: isUserSkill
-                          ? Colors.green[700]
-                          : isMissingSkill
-                              ? Colors.orange[700]
-                              : null,
+                    // color: isUserSkill
+                    //     ? Colors.green.withOpacity(.2)
+                    //     : isMissingSkill
+                    //         ? Colors.orange.withOpacity(.2)
+                    //         : appTheme.primary.withOpacity(.2),
+                    // borderRadius: BorderRadius.circular(10.0),
                     ),
-                  ),
-                ),
+                // child: Icon(
+                //   isUserSkill ? Icons.star : Icons.lightbulb_outline,
+                //   color: isUserSkill
+                //       ? Colors.green[700]
+                //       : isMissingSkill
+                //           ? Colors.orange[700]
+                //           : appTheme.primary,
+                //   size: 20,
+                // ),
               ),
               title: Container(
-                alignment: Alignment.center,
+                alignment: Alignment.centerLeft,
                 child: Text(
                   title.toString(),
                   style: textTheme.headlineMedium,
-                  textAlign: TextAlign.center,
+                  textAlign: TextAlign.left,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   softWrap: true, // Allow text to wrap to next line

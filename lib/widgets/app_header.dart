@@ -27,7 +27,7 @@ class CustomAppHeader extends ConsumerWidget {
               leading: SizedBox(
                 width: MediaQuery.of(context).size.width / 2,
                 child: Text(
-                  "Discover Your Favorite Tech Skills.",
+                  "Skill Sage",
                   style: textTheme.headlineLarge,
                   maxLines: 2,
                 ),

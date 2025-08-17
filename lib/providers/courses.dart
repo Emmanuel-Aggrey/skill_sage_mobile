@@ -34,6 +34,10 @@ class CourseProvider extends ChangeNotifier {
   Future searchCourse(skill) async {
     print(skill);
     final resp = await cather(() => http.get('/course/search/$skill'));
+
+    print('course');
+    print(resp.result);
+
     if (!resp.success) return throw Exception("failed");
     notifyListeners();
     return resp;

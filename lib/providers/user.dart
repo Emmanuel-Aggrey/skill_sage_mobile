@@ -344,8 +344,8 @@ class UserProvider extends ChangeNotifier {
   }
 
   Future<bool> refreshAllMatches() async {
-    final resp = await cather(() => http.post('/user/refresh_all_matches/'));
-    if (!resp.success) return throw Exception("failed");
+    final resp = await cather(() => http.post('/user/refresh_all_matches'));
+    if (!resp.success) return throw Exception(resp.success);
     notifyListeners();
     return true;
   }

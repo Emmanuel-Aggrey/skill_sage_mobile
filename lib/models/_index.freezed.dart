@@ -247,6 +247,7 @@ class _User implements User {
 
   final List<String>? _resume;
   @override
+  @override
   List<String>? get resume {
     final value = _resume;
     if (value == null) return null;

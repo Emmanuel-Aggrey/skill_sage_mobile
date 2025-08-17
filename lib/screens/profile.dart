@@ -16,7 +16,6 @@ class ProfileScreen extends ConsumerWidget {
           children: [
             ProfileHeader(
               name: (user != null) ? user.name : '',
-              location: (user != null) ? user.profile.location ?? '' : '',
             ),
             const SizedBox(
               height: 10.0,
@@ -33,8 +32,8 @@ class ProfileScreen extends ConsumerWidget {
 
 // Header
 class ProfileHeader extends ConsumerWidget {
-  final String? name, location;
-  const ProfileHeader({super.key, this.name, this.location});
+  final String? name;
+  const ProfileHeader({super.key, this.name});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -190,18 +189,20 @@ class ProfileHeader extends ConsumerWidget {
                   const SizedBox(
                     height: 5,
                   ),
-                  Text(
-                    location.toString(),
-                    style: textTheme.labelSmall,
-                  ),
+                  // Text(
+                  //   // location.toString(),
+                  //   style: textTheme.labelSmall,
+                  // ),
                   const SizedBox(
                     height: 10,
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('120k Follower', style: textTheme.headlineSmall),
+                      Text(user?.profile?.location ?? '',
+                          style: textTheme.headlineSmall),
                       Text('120k Following', style: textTheme.headlineSmall),
+                      // Text(user?.llmInsights?.primaryDomain ?? 'No domain',style: textTheme.headlineSmall),
                       InkWell(
                         onTap: () => Navigator.of(context)
                             .pushNamed(AppRoutes.editProfile),
@@ -660,7 +661,7 @@ class _ProfilesState extends ConsumerState<Profiles> {
       trailingIcon: IconButton(
         icon: Icon(
           Icons.refresh,
-          size: 20,
+          size: 0,
           color: appTheme.primary2,
         ),
         onPressed: () async {

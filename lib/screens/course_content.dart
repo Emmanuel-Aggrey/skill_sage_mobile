@@ -9,101 +9,98 @@ class CourseContentScreen extends StatefulWidget {
 }
 
 class _CourseContentScreenState extends State<CourseContentScreen> {
-  late YoutubePlayerController _controller;
-  late TextEditingController _idController;
-  late TextEditingController _seekToController;
-
   String _selectedCourseVideo = '';
-  int _selectedVideoIndex = 1;
+  String _selectedVideoId = '';
+  int _selectedVideoIndex = 0;
 
   late List courses;
-
-  // final List<bool> _isCourseExpanded = List.generate(2, (index) => false);
-
   late List<bool> _isCourseExpanded;
 
   @override
   void initState() {
     super.initState();
-    courses = widget.content!['items'];
+    courses = widget.content!['items'] ?? [];
     _isCourseExpanded = List.generate(courses.length, (index) => false);
-    print(courses);
+    print('Course items: $courses');
+  }
 
-    // Initialize controllers
-    _idController = TextEditingController();
-    _seekToController = TextEditingController();
+  // Helper method to extract YouTube video ID from URL
+  String? _extractVideoId(String url) {
+    try {
+      if (url.isEmpty) return null;
 
-    // Get initial video ID with proper validation
-    String initialVideoId = '';
-    if (courses.isNotEmpty &&
-        courses[0]['sessions'] != null &&
-        courses[0]['sessions'].isNotEmpty &&
-        courses[0]['sessions'][0]['video'] != null) {
-      initialVideoId = courses[0]['sessions'][0]['video'];
-    }
+      final uri = Uri.parse(url);
+      String? videoId;
 
-    _controller = YoutubePlayerController(
-      initialVideoId: initialVideoId,
-      flags: const YoutubePlayerFlags(
-        mute: false,
-        autoPlay: false, // Changed to false for better UX
-        disableDragSeek: false,
-        loop: false,
-        isLive: false,
-        forceHD: false,
-        enableCaption: true,
-      ),
-    );
+      if (uri.host.contains('youtube.com')) {
+        videoId = uri.queryParameters['v'];
+      } else if (uri.host.contains('youtu.be')) {
+        videoId = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : null;
+      }
 
-    // Set initial selected video
-    if (initialVideoId.isNotEmpty) {
-      _selectedCourseVideo = initialVideoId;
+      print('Extracted video ID: $videoId from URL: $url');
+      return videoId;
+    } catch (e) {
+      print('Error extracting video ID from $url: $e');
+      return null;
     }
   }
 
-  @override
-  void deactivate() {
-    _controller.pause();
-    super.deactivate();
+  // Get YouTube thumbnail URL
+  String _getVideoThumbnail(String videoId) {
+    if (videoId.isEmpty) return '';
+    return 'https://img.youtube.com/vi/$videoId/mqdefault.jpg';
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    _idController.dispose();
-    _seekToController.dispose();
-    super.dispose();
-  }
+  void _playVideo(String videoUrl, int courseIndex, int sessionIndex) {
+    if (videoUrl.isEmpty) {
+      _showSnackBar('Invalid video URL');
+      return;
+    }
 
-  void playCourse(String video) {
-    if (video.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid video ID')),
-      );
+    final videoId = _extractVideoId(videoUrl);
+
+    if (videoId == null || videoId.isEmpty) {
+      _showSnackBar('Could not extract video ID from URL');
       return;
     }
 
     setState(() {
-      if (_selectedCourseVideo == video) {
-        _controller.pause();
-        _selectedCourseVideo = "";
-      } else {
-        try {
-          _controller.load(video);
-          _selectedCourseVideo = video;
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error loading video: $e')),
-          );
-        }
-      }
+      _selectedCourseVideo = videoUrl;
+      _selectedVideoId = videoId;
+      _selectedVideoIndex = sessionIndex + 1;
     });
+
+    // Navigate to video player screen
+    final sessionData = courses[courseIndex]['sessions'][sessionIndex];
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => YouTubeVideoPlayerScreen(
+          videoId: videoId,
+          title: sessionData['name'] ?? 'Video',
+          channelName: courses[courseIndex]['name'],
+        ),
+      ),
+    );
+  }
+
+  void _showSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = CustomTextTheme.customTextTheme(context).textTheme;
     final appTheme = AppTheme.appTheme(context);
+
     return Scaffold(
       backgroundColor: appTheme.bg1,
       appBar: AppBar(
@@ -114,14 +111,13 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
             size: 20,
             color: appTheme.txt,
           ),
-          onPressed: Navigator.of(context).pop,
+          onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Center(
-          child: Text(
-            "Course Content",
-            style: textTheme.labelMedium,
-          ),
+        title: Text(
+          "Course Content",
+          style: textTheme.labelMedium,
         ),
+        centerTitle: true,
         elevation: 0,
         backgroundColor: appTheme.scaffold,
         actions: [
@@ -138,18 +134,28 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
       body: SafeArea(
         child: (courses.isEmpty)
             ? Center(
-                child: SizedBox(
-                  child: Image.asset("assets/images/not_found.png"),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset("assets/images/not_found.png"),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No course content available',
+                      style: textTheme.bodyLarge,
+                    ),
+                  ],
                 ),
               )
             : Column(
                 children: [
+                  // Video Preview Section
                   Container(
                     width: double.infinity,
                     height: 220,
                     margin: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
+                      color: Colors.black,
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.1),
@@ -160,150 +166,27 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: _selectedCourseVideo.isEmpty
-                          ? Container(
-                              color: Colors.grey[200],
-                              child: const Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.play_circle_outline,
-                                      size: 64,
-                                      color: Colors.grey,
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      'Select a video to play',
-                                      style: TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          : YoutubePlayerBuilder(
-                              player: YoutubePlayer(
-                                controller: _controller,
-                                showVideoProgressIndicator: true,
-                                progressIndicatorColor: Colors.red,
-                                progressColors: const ProgressBarColors(
-                                  playedColor: Colors.red,
-                                  handleColor: Colors.redAccent,
-                                ),
-                              ),
-                              builder: (context, player) => player,
-                            ),
+                      child: _buildVideoPreview(textTheme),
                     ),
                   ),
+
+                  // Course Content List
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.all(10.0),
                       child: SingleChildScrollView(
-                        scrollDirection: Axis.vertical,
                         child: ExpansionPanelList(
-                          animationDuration: const Duration(milliseconds: 1000),
+                          animationDuration: const Duration(milliseconds: 300),
                           dividerColor: appTheme.primary.withOpacity(.4),
                           elevation: 1,
                           expandedHeaderPadding: EdgeInsets.zero,
                           expansionCallback: (int index, bool isExpanded) {
-                            // Handle expansion state
                             setState(() {
                               _isCourseExpanded[index] =
                                   !_isCourseExpanded[index];
                             });
                           },
-                          children: [
-                            for (int index = 0; index < courses.length; index++)
-                              ExpansionPanel(
-                                //  key: UniqueKey(),
-                                backgroundColor: appTheme.scaffold,
-                                headerBuilder: (context, isExpanded) =>
-                                    Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 15.0, vertical: 18),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Section ${index + 1}: ${courses[index]['name']}",
-                                        style: textTheme.headlineMedium,
-                                      ),
-                                      const SizedBox(height: 5),
-                                      Text(
-                                        "$_selectedVideoIndex / ${courses[index]['sessions'].length}",
-                                        style: textTheme.labelSmall,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                body: ListView.separated(
-                                  scrollDirection: Axis.vertical,
-                                  physics: const BouncingScrollPhysics(),
-                                  separatorBuilder: (context, index) =>
-                                      const Divider(),
-                                  shrinkWrap: true,
-                                  itemCount: courses[index]['sessions'].length,
-                                  itemBuilder: (context, itemIndex) =>
-                                      GestureDetector(
-                                    onTap: () {
-                                      // setState(() {
-                                      //   // Toggle the expansion state
-                                      //   _isCourseExpanded[index] =
-                                      //       !_isCourseExpanded[index];
-                                      // });
-
-                                      print(index);
-                                      playCourse(courses[index]['sessions']
-                                          [itemIndex]['video']);
-                                      _selectedVideoIndex = courses[index]
-                                              ['sessions'][itemIndex]
-                                          .indexOf(_selectedCourseVideo);
-                                    },
-                                    child: Padding(
-                                      padding: EdgeInsets.zero,
-                                      child: Column(
-                                        children: [
-                                          ListTile(
-                                            minLeadingWidth: 0,
-                                            contentPadding: EdgeInsets.zero,
-                                            leading: Checkbox(
-                                              value: false,
-                                              onChanged: (val) => {},
-                                            ),
-                                            title: Text(
-                                              "${itemIndex + 1}. ${courses[index]['sessions'][itemIndex]['name']}",
-                                              style: textTheme.labelMedium,
-                                            ),
-                                            subtitle: Row(
-                                              children: [
-                                                const Icon(
-                                                  CupertinoIcons.play_rectangle,
-                                                  size: 15,
-                                                ),
-                                                const SizedBox(
-                                                  width: 10,
-                                                ),
-                                                Text(
-                                                  courses[index]["sessions"]
-                                                          [itemIndex]["time"] ??
-                                                      "",
-                                                  style: textTheme.labelMedium,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                isExpanded: _isCourseExpanded[index],
-                              )
-                          ],
+                          children: _buildExpansionPanels(textTheme, appTheme),
                         ),
                       ),
                     ),
@@ -312,5 +195,287 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
               ),
       ),
     );
+  }
+
+  Widget _buildVideoPreview(TextTheme textTheme) {
+    if (_selectedVideoId.isEmpty) {
+      return Container(
+        color: Colors.grey[900],
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.play_circle_outline,
+                size: 64,
+                color: Colors.white54,
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Select a video to preview',
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.network(
+          _getVideoThumbnail(_selectedVideoId),
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: Colors.grey[800],
+              child: const Icon(
+                Icons.video_library,
+                size: 64,
+                color: Colors.white54,
+              ),
+            );
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              color: Colors.grey[800],
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.red),
+              ),
+            );
+          },
+        ),
+        Container(
+          color: Colors.black.withValues(alpha: 0.3),
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: const Icon(
+                Icons.play_arrow,
+                color: Colors.white,
+                size: 48,
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 8,
+          left: 8,
+          right: 8,
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              'Tap to play video',
+              style: textTheme.bodySmall?.copyWith(color: Colors.white),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<ExpansionPanel> _buildExpansionPanels(TextTheme textTheme, appTheme) {
+    return List.generate(courses.length, (index) {
+      final course = courses[index];
+      final sessions = course['sessions'] as List? ?? [];
+
+      return ExpansionPanel(
+        backgroundColor: appTheme.scaffold,
+        headerBuilder: (context, isExpanded) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Section ${index + 1}: ${course['name']}",
+                style: textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                "${sessions.length} video${sessions.length != 1 ? 's' : ''}",
+                style: textTheme.labelSmall,
+              ),
+            ],
+          ),
+        ),
+        body: ListView.separated(
+          physics: const NeverScrollableScrollPhysics(),
+          separatorBuilder: (context, sessionIndex) => const Divider(height: 1),
+          shrinkWrap: true,
+          itemCount: sessions.length,
+          itemBuilder: (context, sessionIndex) {
+            final session = sessions[sessionIndex];
+            final isCurrentlySelected =
+                _selectedCourseVideo == session['video'];
+            final videoId = _extractVideoId(session['video'] ?? '');
+
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  print('Tapped video: ${session['video']}');
+                  _playVideo(session['video'] ?? '', index, sessionIndex);
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isCurrentlySelected
+                        ? appTheme.primary.withOpacity(0.1)
+                        : Colors.transparent,
+                    border: Border(
+                      left: BorderSide(
+                        color: isCurrentlySelected
+                            ? appTheme.primary
+                            : Colors.transparent,
+                        width: 3,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      // Video thumbnail
+                      Container(
+                        width: 60,
+                        height: 45,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(6),
+                          color: Colors.grey[300],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              if (videoId != null)
+                                Image.network(
+                                  _getVideoThumbnail(videoId),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey[400],
+                                      child: const Icon(
+                                        Icons.video_library,
+                                        size: 20,
+                                        color: Colors.grey,
+                                      ),
+                                    );
+                                  },
+                                )
+                              else
+                                Container(
+                                  color: Colors.grey[400],
+                                  child: const Icon(
+                                    Icons.video_library,
+                                    size: 20,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              Center(
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.7),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.play_arrow,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      // Video info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "${sessionIndex + 1}. ${session['name'] ?? 'Untitled Video'}",
+                              style: textTheme.labelMedium?.copyWith(
+                                fontWeight: isCurrentlySelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: isCurrentlySelected
+                                    ? appTheme.primary
+                                    : null,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  isCurrentlySelected
+                                      ? Icons.play_circle_filled
+                                      : Icons.play_circle_outline,
+                                  size: 16,
+                                  color: isCurrentlySelected
+                                      ? appTheme.primary
+                                      : Colors.grey[600],
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  session["time"] ?? "Duration not available",
+                                  style: textTheme.labelSmall?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                const Spacer(),
+                                if (isCurrentlySelected)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: appTheme.primary,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      'Selected',
+                                      style: textTheme.labelSmall?.copyWith(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        isExpanded: _isCourseExpanded[index],
+      );
+    });
   }
 }

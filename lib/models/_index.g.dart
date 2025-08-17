@@ -27,6 +27,7 @@ _User _$UserFromJson(Map<String, dynamic> json) => _User(
       llmInsights: json['llm_insights'] == null
           ? null
           : LLMInsights.fromJson(json['llm_insights'] as Map<String, dynamic>),
+      bookmarkCount: (json['bookmark_count'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$UserToJson(_User instance) => <String, dynamic>{
@@ -41,6 +42,7 @@ Map<String, dynamic> _$UserToJson(_User instance) => <String, dynamic>{
       'skills': instance.skills,
       'education': instance.education,
       'llm_insights': instance.llmInsights,
+      'bookmark_count': instance.bookmarkCount,
     };
 
 const _$RoleEnumMap = {

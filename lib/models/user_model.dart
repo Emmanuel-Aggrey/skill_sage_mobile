@@ -18,6 +18,7 @@ abstract class User with _$User {
     List<Map>? skills,
     List<Education>? education,
     @JsonKey(name: "llm_insights") LLMInsights? llmInsights,
+    @JsonKey(name: "bookmark_count") int? bookmarkCount,
   }) = _User;
 
   factory User.fromJson(dynamic json) => _$UserFromJson(json);

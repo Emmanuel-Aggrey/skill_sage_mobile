@@ -28,6 +28,8 @@ mixin _$User {
   List<Education>? get education;
   @JsonKey(name: "llm_insights")
   LLMInsights? get llmInsights;
+  @JsonKey(name: "bookmark_count")
+  int? get bookmarkCount;
 
   /// Create a copy of User
   /// with the given fields replaced by the non-null parameter values.
@@ -57,7 +59,9 @@ mixin _$User {
             const DeepCollectionEquality().equals(other.skills, skills) &&
             const DeepCollectionEquality().equals(other.education, education) &&
             (identical(other.llmInsights, llmInsights) ||
-                other.llmInsights == llmInsights));
+                other.llmInsights == llmInsights) &&
+            (identical(other.bookmarkCount, bookmarkCount) ||
+                other.bookmarkCount == bookmarkCount));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -74,11 +78,12 @@ mixin _$User {
       const DeepCollectionEquality().hash(resume),
       const DeepCollectionEquality().hash(skills),
       const DeepCollectionEquality().hash(education),
-      llmInsights);
+      llmInsights,
+      bookmarkCount);
 
   @override
   String toString() {
-    return 'User(name: $name, email: $email, id: $id, role: $role, profile: $profile, profileImage: $profileImage, experience: $experience, resume: $resume, skills: $skills, education: $education, llmInsights: $llmInsights)';
+    return 'User(name: $name, email: $email, id: $id, role: $role, profile: $profile, profileImage: $profileImage, experience: $experience, resume: $resume, skills: $skills, education: $education, llmInsights: $llmInsights, bookmarkCount: $bookmarkCount)';
   }
 }
 
@@ -98,7 +103,8 @@ abstract mixin class $UserCopyWith<$Res> {
       List<String>? resume,
       List<Map>? skills,
       List<Education>? education,
-      @JsonKey(name: "llm_insights") LLMInsights? llmInsights});
+      @JsonKey(name: "llm_insights") LLMInsights? llmInsights,
+      @JsonKey(name: "bookmark_count") int? bookmarkCount});
 
   $UserProfileCopyWith<$Res> get profile;
   $LLMInsightsCopyWith<$Res>? get llmInsights;
@@ -127,6 +133,7 @@ class _$UserCopyWithImpl<$Res> implements $UserCopyWith<$Res> {
     Object? skills = freezed,
     Object? education = freezed,
     Object? llmInsights = freezed,
+    Object? bookmarkCount = freezed,
   }) {
     return _then(_self.copyWith(
       name: null == name
@@ -173,6 +180,10 @@ class _$UserCopyWithImpl<$Res> implements $UserCopyWith<$Res> {
           ? _self.llmInsights
           : llmInsights // ignore: cast_nullable_to_non_nullable
               as LLMInsights?,
+      bookmarkCount: freezed == bookmarkCount
+          ? _self.bookmarkCount
+          : bookmarkCount // ignore: cast_nullable_to_non_nullable
+              as int?,
     ));
   }
 
@@ -215,7 +226,8 @@ class _User implements User {
       final List<String>? resume,
       final List<Map>? skills,
       final List<Education>? education,
-      @JsonKey(name: "llm_insights") this.llmInsights})
+      @JsonKey(name: "llm_insights") this.llmInsights,
+      @JsonKey(name: "bookmark_count") this.bookmarkCount})
       : _experience = experience,
         _resume = resume,
         _skills = skills,
@@ -246,7 +258,6 @@ class _User implements User {
   }
 
   final List<String>? _resume;
-  @override
   @override
   List<String>? get resume {
     final value = _resume;
@@ -279,6 +290,9 @@ class _User implements User {
   @override
   @JsonKey(name: "llm_insights")
   final LLMInsights? llmInsights;
+  @override
+  @JsonKey(name: "bookmark_count")
+  final int? bookmarkCount;
 
   /// Create a copy of User
   /// with the given fields replaced by the non-null parameter values.
@@ -314,7 +328,9 @@ class _User implements User {
             const DeepCollectionEquality()
                 .equals(other._education, _education) &&
             (identical(other.llmInsights, llmInsights) ||
-                other.llmInsights == llmInsights));
+                other.llmInsights == llmInsights) &&
+            (identical(other.bookmarkCount, bookmarkCount) ||
+                other.bookmarkCount == bookmarkCount));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -331,11 +347,12 @@ class _User implements User {
       const DeepCollectionEquality().hash(_resume),
       const DeepCollectionEquality().hash(_skills),
       const DeepCollectionEquality().hash(_education),
-      llmInsights);
+      llmInsights,
+      bookmarkCount);
 
   @override
   String toString() {
-    return 'User(name: $name, email: $email, id: $id, role: $role, profile: $profile, profileImage: $profileImage, experience: $experience, resume: $resume, skills: $skills, education: $education, llmInsights: $llmInsights)';
+    return 'User(name: $name, email: $email, id: $id, role: $role, profile: $profile, profileImage: $profileImage, experience: $experience, resume: $resume, skills: $skills, education: $education, llmInsights: $llmInsights, bookmarkCount: $bookmarkCount)';
   }
 }
 
@@ -356,7 +373,8 @@ abstract mixin class _$UserCopyWith<$Res> implements $UserCopyWith<$Res> {
       List<String>? resume,
       List<Map>? skills,
       List<Education>? education,
-      @JsonKey(name: "llm_insights") LLMInsights? llmInsights});
+      @JsonKey(name: "llm_insights") LLMInsights? llmInsights,
+      @JsonKey(name: "bookmark_count") int? bookmarkCount});
 
   @override
   $UserProfileCopyWith<$Res> get profile;
@@ -387,6 +405,7 @@ class __$UserCopyWithImpl<$Res> implements _$UserCopyWith<$Res> {
     Object? skills = freezed,
     Object? education = freezed,
     Object? llmInsights = freezed,
+    Object? bookmarkCount = freezed,
   }) {
     return _then(_User(
       name: null == name
@@ -433,6 +452,10 @@ class __$UserCopyWithImpl<$Res> implements _$UserCopyWith<$Res> {
           ? _self.llmInsights
           : llmInsights // ignore: cast_nullable_to_non_nullable
               as LLMInsights?,
+      bookmarkCount: freezed == bookmarkCount
+          ? _self.bookmarkCount
+          : bookmarkCount // ignore: cast_nullable_to_non_nullable
+              as int?,
     ));
   }
 

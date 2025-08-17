@@ -199,9 +199,12 @@ class ProfileHeader extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      Text(
+                        '${user?.bookmarkCount ?? 0} Bookmarks',
+                        style: textTheme.headlineSmall,
+                      ),
                       Text(user?.profile?.location ?? '',
                           style: textTheme.headlineSmall),
-                      Text('120k Following', style: textTheme.headlineSmall),
                       // Text(user?.llmInsights?.primaryDomain ?? 'No domain',style: textTheme.headlineSmall),
                       InkWell(
                         onTap: () => Navigator.of(context)

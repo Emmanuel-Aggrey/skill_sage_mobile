@@ -34,11 +34,18 @@ class _JobDetailAnalysisScreenState
     try {
       final jobProv = ref.read(jobProvider);
       final jobId = widget.job['id'] as int;
+      final rawSource = widget.job['source'] as String?;
+
+      final source = (rawSource == null || rawSource.trim().isEmpty)
+          ? 'job'
+          : "external_job";
 
       final response = await jobProv.getDetailedMatchAnalysis(
+        source,
         jobId,
         includeImprovementPlan: true,
         includeSimilarItems: true,
+        forceRefresh: false,
       );
 
       setState(() {
@@ -107,13 +114,18 @@ class _JobDetailAnalysisScreenState
 
   Widget _buildContent() {
     final textTheme = CustomTextTheme.customTextTheme(context).textTheme;
+
+    // Make sure we're accessing the correct data structure
     final analysis = detailedAnalysis!;
-    final item = analysis['item'] as Map<String, dynamic>;
-    final matchAnalysis = analysis['match_analysis'] as Map<String, dynamic>;
+    print('Analysis keys: ${analysis.keys}'); // Debug print
+
+    final item = analysis['item'] as Map<String, dynamic>? ?? {};
+    final matchAnalysis =
+        analysis['match_analysis'] as Map<String, dynamic>? ?? {};
     final improvementPlan =
-        analysis['improvement_plan'] as Map<String, dynamic>?;
+        analysis['improvement_plan'] as Map<String, dynamic>? ?? {};
     final userProfile =
-        analysis['user_profile_summary'] as Map<String, dynamic>;
+        analysis['user_profile_summary'] as Map<String, dynamic>? ?? {};
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -133,7 +145,10 @@ class _JobDetailAnalysisScreenState
           // Skills Analysis
           _buildSkillsAnalysisCard(matchAnalysis),
 
-          if (improvementPlan != null) ...[
+          // Only show improvement plan if it exists and has content
+          if (improvementPlan != null &&
+              (improvementPlan['improvement_steps'] != null ||
+                  improvementPlan['resources'] != null)) ...[
             const SizedBox(height: 16),
             _buildImprovementPlanCard(improvementPlan),
           ],
@@ -505,6 +520,8 @@ class _JobDetailAnalysisScreenState
                     AppRoutes.youtubeVideosRoute,
                     arguments: {"skills": skills},
                   );
+                  print('skills : $skills');
+                  // print(skills)
                 },
                 icon: const Icon(Icons.play_arrow, size: 16),
                 label: const Text('Learn All'),
@@ -543,13 +560,78 @@ class _JobDetailAnalysisScreenState
     );
   }
 
+  Map<String, dynamic> _parseStepString(String stepString) {
+    try {
+      // Try to parse as JSON first
+      if (stepString.startsWith('{') && stepString.endsWith('}')) {
+        return json.decode(stepString) as Map<String, dynamic>;
+      }
+
+      // If not JSON, parse manually using regex or string manipulation
+      final Map<String, dynamic> parsed = {};
+
+      // Extract step_number
+      final stepNumMatch =
+          RegExp(r'step_number:\s*(\d+)').firstMatch(stepString);
+      if (stepNumMatch != null) {
+        parsed['step_number'] = int.tryParse(stepNumMatch.group(1)!) ?? 0;
+      }
+
+      // Extract title
+      final titleMatch = RegExp(r'title:\s*([^,}]+)').firstMatch(stepString);
+      if (titleMatch != null) {
+        parsed['title'] = titleMatch.group(1)!.trim();
+      }
+
+      // Extract description
+      final descMatch = RegExp(
+              r'description:\s*([^,}]+(?:,[^{}]*?)?)(?=,\s*estimated_duration|$)')
+          .firstMatch(stepString);
+      if (descMatch != null) {
+        parsed['description'] = descMatch.group(1)!.trim();
+      }
+
+      // Extract estimated_duration
+      final durationMatch =
+          RegExp(r'estimated_duration:\s*([^,}]+)').firstMatch(stepString);
+      if (durationMatch != null) {
+        parsed['estimated_duration'] = durationMatch.group(1)!.trim();
+      }
+
+      // Extract resources (everything after resources:)
+      final resourcesMatch =
+          RegExp(r'resources:\s*\[([^\]]*)\]').firstMatch(stepString);
+      if (resourcesMatch != null) {
+        final resourcesStr = resourcesMatch.group(1)!;
+        parsed['resources'] =
+            resourcesStr.split(',').map((e) => e.trim()).toList();
+      }
+
+      return parsed;
+    } catch (e) {
+      print('Error parsing step: $e');
+      return {'raw_text': stepString};
+    }
+  }
+
   Widget _buildImprovementPlanCard(Map<String, dynamic> improvementPlan) {
     final textTheme = CustomTextTheme.customTextTheme(context).textTheme;
-    final plan = improvementPlan['improvement_plan'] as Map<String, dynamic>;
-    final overview = plan['overview'] ?? '';
-    final estimatedTime = plan['estimated_time'] ?? '';
-    final steps = plan['improvement_steps'] as List<dynamic>? ?? [];
-    final resources = plan['resources'] as List<dynamic>? ?? [];
+
+    final rawSteps =
+        (improvementPlan['improvement_steps'] as List<dynamic>?) ?? [];
+    final estimatedTime = improvementPlan['estimated_time']?.toString() ?? '';
+    final resources = (improvementPlan['resources'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [];
+
+    // Parse the step strings into structured data
+    final parsedSteps = rawSteps.map((step) {
+      if (step is String) {
+        return _parseStepString(step);
+      }
+      return step as Map<String, dynamic>? ?? {};
+    }).toList();
 
     return Card(
       elevation: 2,
@@ -569,46 +651,36 @@ class _JobDetailAnalysisScreenState
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.indigo[50],
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    estimatedTime,
-                    style: TextStyle(
-                      color: Colors.indigo[700],
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                if (estimatedTime.isNotEmpty)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.indigo[50],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      estimatedTime,
+                      style: TextStyle(
+                        color: Colors.indigo[700],
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 16),
-            if (overview.isNotEmpty) ...[
-              Text(
-                'Overview',
-                style: textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                overview,
-                style: textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
-            ],
-            if (steps.isNotEmpty) ...[
+            if (parsedSteps.isNotEmpty) ...[
               Text(
                 'Learning Steps',
                 style: textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              ...steps.map((step) => _buildImprovementStep(step)).toList(),
+              ...parsedSteps
+                  .map((step) => _buildParsedImprovementStep(step))
+                  .toList(),
               const SizedBox(height: 16),
             ],
             if (resources.isNotEmpty) ...[
@@ -620,25 +692,249 @@ class _JobDetailAnalysisScreenState
               const SizedBox(height: 8),
               ...resources
                   .map((resource) => Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Row(
-                          children: [
-                            Icon(Icons.link, size: 16, color: Colors.blue[600]),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                resource.toString(),
-                                style: textTheme.bodyMedium
-                                    ?.copyWith(color: Colors.blue[600]),
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue[200]!),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.link,
+                                  size: 16, color: Colors.blue[600]),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  resource,
+                                  style: textTheme.bodySmall
+                                      ?.copyWith(color: Colors.blue[700]),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ))
                   .toList(),
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildRawTextStep(String rawText) {
+    final textTheme = CustomTextTheme.customTextTheme(context).textTheme;
+
+    // Try to extract at least the step number from the beginning
+    final stepMatch = RegExp(r'^(\d+)').firstMatch(rawText);
+    final stepNumber = stepMatch?.group(1) ?? '•';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.indigo[600],
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Text(
+                stepNumber,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              rawText,
+              style: textTheme.bodyMedium,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildParsedImprovementStep(Map<String, dynamic> step) {
+    final textTheme = CustomTextTheme.customTextTheme(context).textTheme;
+
+    // Handle both parsed and raw text
+    if (step.containsKey('raw_text')) {
+      return _buildRawTextStep(step['raw_text'] as String);
+    }
+
+    final stepNumber = step['step_number'] ?? 0;
+    final title = step['title']?.toString() ?? 'Learning Step';
+    final description = step['description']?.toString() ?? '';
+    final duration = step['estimated_duration']?.toString() ?? '';
+    final stepResources = (step['resources'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.indigo[600],
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(
+                  child: Text(
+                    stepNumber.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    if (duration.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[100],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          duration,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (description.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              description,
+              style: textTheme.bodyMedium,
+            ),
+          ],
+          if (stepResources.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Resources for this step:',
+              style: textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.bold, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 8),
+            ...stepResources
+                .map((resource) => Padding(
+                      padding: const EdgeInsets.only(left: 16, bottom: 4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.link, size: 14, color: Colors.blue[600]),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              resource,
+                              style: textTheme.bodySmall
+                                  ?.copyWith(color: Colors.blue[600]),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ))
+                .toList(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSimpleImprovementStep(int stepNumber, String stepText) {
+    final textTheme = CustomTextTheme.customTextTheme(context).textTheme;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.indigo[600],
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Text(
+                stepNumber.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              stepText,
+              style: textTheme.bodyMedium,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -650,6 +946,7 @@ class _JobDetailAnalysisScreenState
     final description = step['description'] ?? '';
     final duration = step['estimated_duration'] ?? '';
     final actions = step['actions'] as List<dynamic>? ?? [];
+    final resources = step['resources'] as List<dynamic>? ?? [];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -733,6 +1030,32 @@ class _JobDetailAnalysisScreenState
                           Expanded(
                             child: Text(
                               action.toString(),
+                              style: textTheme.bodyMedium,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ))
+                .toList(),
+          ],
+          if (resources.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Resources:',
+              style:
+                  textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            ...resources
+                .map((resource) => Padding(
+                      padding: const EdgeInsets.only(left: 16, bottom: 4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('• ', style: textTheme.bodyMedium),
+                          Expanded(
+                            child: Text(
+                              resource.toString(),
                               style: textTheme.bodyMedium,
                             ),
                           ),

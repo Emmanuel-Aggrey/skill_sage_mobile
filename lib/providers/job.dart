@@ -199,12 +199,15 @@ class JobProvider extends ChangeNotifier {
     return resp;
   }
 
-  Future getDetailedMatchAnalysis(int jobId,
+  Future getDetailedMatchAnalysis(String source, int jobId,
       {bool includeImprovementPlan = true,
-      bool includeSimilarItems = true}) async {
+      bool includeSimilarItems = true,
+      bool forceRefresh = false}) async {
     final resp = await cather(() => http.get(
-        '/user/detailed_match_analysis/job/$jobId/?include_improvement_plan=$includeImprovementPlan&include_similar_items=$includeSimilarItems'));
-    if (!resp.success) return throw Exception("failed");
+        '/user/detailed_match_analysis/$source/$jobId/?include_improvement_plan=$includeImprovementPlan&include_similar_items=$includeSimilarItems&force_refresh=$forceRefresh'));
+
+    if (!resp.success) return throw Exception(resp.result);
+
     return resp;
   }
 }

@@ -22,7 +22,7 @@ class EnhancedSkillCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = CustomTextTheme.customTextTheme(context).textTheme;
     final isMatched = skillType == 'matched';
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -58,7 +58,8 @@ class EnhancedSkillCard extends StatelessWidget {
                       ),
                       child: Icon(
                         isMatched ? Icons.check_circle : Icons.school,
-                        color: isMatched ? Colors.green[600] : Colors.orange[600],
+                        color:
+                            isMatched ? Colors.green[600] : Colors.orange[600],
                         size: 20,
                       ),
                     ),
@@ -82,14 +83,18 @@ class EnhancedSkillCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: isMatched ? Colors.green[100] : Colors.orange[100],
+                                color: isMatched
+                                    ? Colors.green[100]
+                                    : Colors.orange[100],
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 level!,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isMatched ? Colors.green[700] : Colors.orange[700],
+                                  color: isMatched
+                                      ? Colors.green[700]
+                                      : Colors.orange[700],
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -100,20 +105,18 @@ class EnhancedSkillCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 // Status text
                 Text(
-                  isMatched 
-                      ? 'You have this skill' 
-                      : 'Skill gap identified',
+                  isMatched ? 'You have this skill' : 'Skill gap identified',
                   style: textTheme.bodySmall?.copyWith(
                     color: isMatched ? Colors.green[600] : Colors.orange[600],
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                
+
                 // Learn button for missing skills
                 if (!isMatched && showLearnButton) ...[
                   const SizedBox(height: 12),
@@ -172,7 +175,7 @@ class _SkillsAnalysisSectionState extends State<SkillsAnalysisSection> {
   @override
   Widget build(BuildContext context) {
     final textTheme = CustomTextTheme.customTextTheme(context).textTheme;
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
       decoration: BoxDecoration(
@@ -216,9 +219,9 @@ class _SkillsAnalysisSectionState extends State<SkillsAnalysisSection> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Matched Skills Section
             if (widget.matchedSkills.isNotEmpty) ...[
               _buildSkillsSubsection(
@@ -226,13 +229,14 @@ class _SkillsAnalysisSectionState extends State<SkillsAnalysisSection> {
                 skills: widget.matchedSkills,
                 skillType: 'matched',
                 showAll: showAllMatched,
-                onToggleShowAll: () => setState(() => showAllMatched = !showAllMatched),
+                onToggleShowAll: () =>
+                    setState(() => showAllMatched = !showAllMatched),
                 icon: Icons.check_circle,
                 color: Colors.green,
               ),
               const SizedBox(height: 20),
             ],
-            
+
             // Missing Skills Section
             if (widget.missingSkills.isNotEmpty) ...[
               _buildSkillsSubsection(
@@ -240,7 +244,8 @@ class _SkillsAnalysisSectionState extends State<SkillsAnalysisSection> {
                 skills: widget.missingSkills,
                 skillType: 'missing',
                 showAll: showAllMissing,
-                onToggleShowAll: () => setState(() => showAllMissing = !showAllMissing),
+                onToggleShowAll: () =>
+                    setState(() => showAllMissing = !showAllMissing),
                 icon: Icons.school,
                 color: Colors.orange,
               ),
@@ -263,7 +268,7 @@ class _SkillsAnalysisSectionState extends State<SkillsAnalysisSection> {
     final textTheme = CustomTextTheme.customTextTheme(context).textTheme;
     final displaySkills = showAll ? skills : skills.take(3).toList();
     final hasMore = skills.length > 3;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -287,18 +292,18 @@ class _SkillsAnalysisSectionState extends State<SkillsAnalysisSection> {
             ),
           ],
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Skills grid
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: displaySkills.map((skill) => 
-            _buildSkillChip(skill, skillType, color)
-          ).toList(),
+          children: displaySkills
+              .map((skill) => _buildSkillChip(skill, skillType, color))
+              .toList(),
         ),
-        
+
         // Show more/less button
         if (hasMore) ...[
           const SizedBox(height: 12),
@@ -322,7 +327,7 @@ class _SkillsAnalysisSectionState extends State<SkillsAnalysisSection> {
 
   Widget _buildSkillChip(String skill, String skillType, MaterialColor color) {
     final isMatched = skillType == 'matched';
-    
+
     return InkWell(
       onTap: () => widget.onSkillTap(skill),
       borderRadius: BorderRadius.circular(20),

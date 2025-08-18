@@ -1,7 +1,7 @@
 part of '_index.dart';
 
 class YoutubeVideosScreen extends ConsumerStatefulWidget {
-  final Map? skill;
+  final dynamic skill;
   const YoutubeVideosScreen({super.key, this.skill});
 
   @override
@@ -31,8 +31,15 @@ class _YoutubeVideosScreenState extends ConsumerState<YoutubeVideosScreen> {
 
       print('Loading YouTube videos for missing skills');
 
-      // Use the skill name to get videos
-      final skillName = widget.skill?['skill'] ?? 'general';
+      String skillName = 'general';
+      if (widget.skill is String) {
+        skillName = widget.skill as String;
+      } else if (widget.skill is List<String> && widget.skill.isNotEmpty) {
+        skillName = widget.skill![0];
+      } else if (widget.skill is Map && widget.skill.containsKey('skill')) {
+        skillName = widget.skill['skill'] as String;
+      }
+
       final loadedVideos = await youtubeProv.getVideosForSkill(skillName);
 
       setState(() {
@@ -101,7 +108,14 @@ class _YoutubeVideosScreenState extends ConsumerState<YoutubeVideosScreen> {
   Widget build(BuildContext context) {
     final appTheme = AppTheme.appTheme(context);
     final textTheme = CustomTextTheme.customTextTheme(context).textTheme;
-    final skillName = widget.skill?['skill'] ?? 'Unknown Skill';
+    String skillName = 'Unknown Skill';
+    if (widget.skill is String) {
+      skillName = widget.skill as String;
+    } else if (widget.skill is List<String> && widget.skill.isNotEmpty) {
+      skillName = widget.skill![0];
+    } else if (widget.skill is Map && widget.skill.containsKey('skill')) {
+      skillName = widget.skill['skill'] as String;
+    }
 
     return Scaffold(
       backgroundColor: appTheme.bg1,

@@ -97,7 +97,7 @@ class AppRouter {
           screen: CoursesScreen(skill: course),
         );
       case AppRoutes.youtubeVideosRoute:
-        final Map skill = settings.arguments as Map;
+        final dynamic skill = settings.arguments;
         return _route(
           screen: YoutubeVideosScreen(skill: skill),
         );

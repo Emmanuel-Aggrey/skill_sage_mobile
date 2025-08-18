@@ -62,10 +62,6 @@ class _JobDetailAnalysisScreenState
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = CustomTextTheme.customTextTheme(context).textTheme;
-    final source = widget.job['source']?.toString() ?? '';
-    final isExternal = source.isNotEmpty && source != 'Internal';
-
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -113,8 +109,6 @@ class _JobDetailAnalysisScreenState
   }
 
   Widget _buildContent() {
-    final textTheme = CustomTextTheme.customTextTheme(context).textTheme;
-
     // Make sure we're accessing the correct data structure
     final analysis = detailedAnalysis!;
     print('Analysis keys: ${analysis.keys}'); // Debug print
@@ -145,10 +139,8 @@ class _JobDetailAnalysisScreenState
           // Skills Analysis
           _buildSkillsAnalysisCard(matchAnalysis),
 
-          // Only show improvement plan if it exists and has content
-          if (improvementPlan != null &&
-              (improvementPlan['improvement_steps'] != null ||
-                  improvementPlan['resources'] != null)) ...[
+          if (improvementPlan['improvement_steps'] != null ||
+              improvementPlan['resources'] != null) ...[
             const SizedBox(height: 16),
             _buildImprovementPlanCard(improvementPlan),
           ],
@@ -479,7 +471,6 @@ class _JobDetailAnalysisScreenState
                 missingSkills.cast<String>(),
                 Colors.orange,
                 Icons.school,
-                showLearnButton: true,
               ),
             ],
           ],
@@ -492,9 +483,8 @@ class _JobDetailAnalysisScreenState
     String title,
     List<String> skills,
     MaterialColor color,
-    IconData icon, {
-    bool showLearnButton = false,
-  }) {
+    IconData icon,
+  ) {
     final textTheme = CustomTextTheme.customTextTheme(context).textTheme;
 
     return Column(
@@ -512,24 +502,6 @@ class _JobDetailAnalysisScreenState
               ),
             ),
             const Spacer(),
-            if (showLearnButton)
-              TextButton.icon(
-                onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    AppRoutes.youtubeVideosRoute,
-                    arguments: {"skills": skills},
-                  );
-                  print('skills : $skills');
-                  // print(skills)
-                },
-                icon: const Icon(Icons.play_arrow, size: 16),
-                label: const Text('Learn All'),
-                style: TextButton.styleFrom(
-                  foregroundColor: color[600],
-                  backgroundColor: color[50],
-                ),
-              ),
           ],
         ),
         const SizedBox(height: 8),
@@ -537,20 +509,30 @@ class _JobDetailAnalysisScreenState
           spacing: 8,
           runSpacing: 8,
           children: skills
-              .map((skill) => Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: color[50],
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: color[200]!),
-                    ),
-                    child: Text(
-                      skill,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: color[700],
-                        fontWeight: FontWeight.w500,
+              .map((skill) => GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.youtubeVideosRoute,
+                        arguments: skill,
+                      );
+                      print('Tapped skill: $skill');
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: color[50],
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: color[200]!),
+                      ),
+                      child: Text(
+                        skill,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: color[700],
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ))
@@ -883,180 +865,6 @@ class _JobDetailAnalysisScreenState
                               resource,
                               style: textTheme.bodySmall
                                   ?.copyWith(color: Colors.blue[600]),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ))
-                .toList(),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSimpleImprovementStep(int stepNumber, String stepText) {
-    final textTheme = CustomTextTheme.customTextTheme(context).textTheme;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Colors.indigo[600],
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
-              child: Text(
-                stepNumber.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              stepText,
-              style: textTheme.bodyMedium,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildImprovementStep(Map<String, dynamic> step) {
-    final textTheme = CustomTextTheme.customTextTheme(context).textTheme;
-    final stepNumber = step['step_number'] ?? 0;
-    final title = step['title'] ?? '';
-    final description = step['description'] ?? '';
-    final duration = step['estimated_duration'] ?? '';
-    final actions = step['actions'] as List<dynamic>? ?? [];
-    final resources = step['resources'] as List<dynamic>? ?? [];
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.indigo[600],
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Center(
-                  child: Text(
-                    stepNumber.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ),
-              if (duration.isNotEmpty)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.orange[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    duration,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.orange[700],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          if (description.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              description,
-              style: textTheme.bodyMedium,
-            ),
-          ],
-          if (actions.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              'Actions:',
-              style:
-                  textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            ...actions
-                .map((action) => Padding(
-                      padding: const EdgeInsets.only(left: 16, bottom: 4),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('• ', style: textTheme.bodyMedium),
-                          Expanded(
-                            child: Text(
-                              action.toString(),
-                              style: textTheme.bodyMedium,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ))
-                .toList(),
-          ],
-          if (resources.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              'Resources:',
-              style:
-                  textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            ...resources
-                .map((resource) => Padding(
-                      padding: const EdgeInsets.only(left: 16, bottom: 4),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('• ', style: textTheme.bodyMedium),
-                          Expanded(
-                            child: Text(
-                              resource.toString(),
-                              style: textTheme.bodyMedium,
                             ),
                           ),
                         ],

@@ -77,7 +77,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     Center(
                       child: Text(
-                        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor",
+                        "Apply smarter, learn faster, grow stronger \n  Skill Sage.",
                         textAlign: TextAlign.center,
                         style: CustomTextTheme.customTextTheme(context)
                             .textTheme

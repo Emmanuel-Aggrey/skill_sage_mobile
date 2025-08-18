@@ -112,11 +112,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     isLoading: loading,
                     // icon: Icon(Icons.facebook),
                   ),
-                  CustomButton(
-                    color: AppTheme.appTheme(context).accent,
-                    title: 'SIGN UP WITH GOOGLE',
-                    icon: SvgPicture.asset("assets/svgs/google.svg"),
-                  ),
+                  // CustomButton(
+                  //   color: AppTheme.appTheme(context).accent,
+                  //   title: 'SIGN UP WITH GOOGLE',
+                  //   icon: SvgPicture.asset("assets/svgs/google.svg"),
+                  // ),
                   const SizedBox(
                     height: 10.0,
                   ),

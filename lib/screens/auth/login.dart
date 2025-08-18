@@ -85,21 +85,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                     const SizedBox(
-                      height: 90,
+                      height: 50, // Reduced from 90 to 50
                     ),
                     Text('Email',
                         style: CustomTextTheme.customTextTheme(context)
                             .textTheme
                             .displaySmall),
+                    const SizedBox(height: 8.0), // Added SizedBox for spacing
                     CustomTextField(
                       hintText: 'Email',
                       controller: _email,
                       isEmail: true,
                     ),
+                    const SizedBox(height: 16.0), // Added SizedBox for spacing
                     Text('Password',
                         style: CustomTextTheme.customTextTheme(context)
                             .textTheme
                             .displaySmall),
+                    const SizedBox(height: 8.0), // Added SizedBox for spacing
                     CustomTextField(
                       hintText: 'Password',
                       controller: _password,
@@ -139,7 +142,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             'Forgot Password?',
                             style: CustomTextTheme.customTextTheme(context)
                                 .textTheme
-                                .displaySmall,
+                                .bodySmall! // Changed to bodySmall for consistency
+                                .copyWith(
+                                    fontWeight: FontWeight.bold), // Made bold
                           ),
                         ),
                       ],
@@ -150,11 +155,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       title: 'LOGIN',
                       isLoading: loading,
                     ),
-                    CustomButton(
-                      color: AppTheme.appTheme(context).accent,
-                      title: 'SIGN IN WITH GOOGLE',
-                      icon: SvgPicture.asset("assets/svgs/google.svg"),
-                    ),
+                    const SizedBox(height: 16.0), // Added SizedBox for spacing
+                    // CustomButton(
+                    //   color: AppTheme.appTheme(context).accent,
+                    //   title: 'SIGN IN WITH GOOGLE',
+                    //   icon: SvgPicture.asset("assets/svgs/google.svg"),
+                    // ),
                     const SizedBox(
                       height: 10.0,
                     ),
@@ -178,7 +184,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             'Sign Up',
                             style: CustomTextTheme.customTextTheme(context)
                                 .textTheme
-                                .bodySmall,
+                                .bodySmall! // Changed to bodySmall
+                                .copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    decoration: TextDecoration
+                                        .underline), // Made bold and underlined
                           ),
                         ),
                       ],

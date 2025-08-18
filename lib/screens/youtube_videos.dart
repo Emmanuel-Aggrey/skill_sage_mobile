@@ -301,25 +301,14 @@ class _YoutubeVideosScreenState extends ConsumerState<YoutubeVideosScreen> {
                   ),
                   const SizedBox(height: 4),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        youtubeProv.formatViewCount(video.viewCount),
+                        '${youtubeProv.formatViewCount(video.viewCount)} • ${video.publishedDate}',
                         style: textTheme.bodySmall?.copyWith(
                           color: Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '•',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        video.publishedDate,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],

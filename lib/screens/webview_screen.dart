@@ -174,17 +174,11 @@ class _WebViewScreenState extends State<WebViewScreen> {
                     onTap: () async {
                       Navigator.pop(context);
                       try {
-                        // Copy URL to clipboard
-                        await Clipboard.setData(
-                            ClipboardData(text: widget.url));
+                        await Share.share(widget.url, subject: widget.title);
 
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                  'URL copied to clipboard! You can now share it in any app.'),
-                              duration: Duration(seconds: 3),
-                            ),
+                            const SnackBar(content: Text('URL shared!')),
                           );
                         }
                       } catch (e) {

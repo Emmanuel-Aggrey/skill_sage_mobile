@@ -84,15 +84,11 @@ class _YoutubeVideosScreenState extends ConsumerState<YoutubeVideosScreen> {
       final shareText =
           '${video.title}\n\nWatch this ${video.skill} tutorial:\n${video.url}';
 
-      // For now, copy to clipboard as a fallback
-      await Clipboard.setData(ClipboardData(text: shareText));
+      await Share.share(shareText);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Video link copied to clipboard!'),
-            duration: Duration(seconds: 2),
-          ),
+          const SnackBar(content: Text('Video shared!')),
         );
       }
     } catch (e) {

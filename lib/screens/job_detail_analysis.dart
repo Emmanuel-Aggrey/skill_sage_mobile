@@ -516,7 +516,6 @@ class _JobDetailAnalysisScreenState
                         AppRoutes.youtubeVideosRoute,
                         arguments: skill,
                       );
-                      print('Tapped skill: $skill');
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -1026,9 +1025,19 @@ class _JobDetailAnalysisScreenState
     // Implement job sharing functionality using share_plus
     final jobTitle = widget.job['title'] ?? 'Job Opportunity';
     final company = widget.job['company'] ?? 'Company';
+    final jobId = widget.job['id']?.toString() ?? '';
+    final jobSource = widget.job['source']?.toString() ?? '';
+
+    String url = '';
+    if (jobSource == 'external_job' && widget.job['apply_url'] != null) {
+      url = widget.job['apply_url'];
+    } else if (jobId.isNotEmpty) {
+      url =
+          'https://skill-sage.com/jobs/$jobId'; // Assuming a base URL for internal jobs
+    }
 
     Share.share(
-      'Check out this job opportunity: $jobTitle at $company',
+      'Check out this job opportunity: $jobTitle at $company. Learn more: $url',
       subject: 'Job Recommendation',
     );
   }

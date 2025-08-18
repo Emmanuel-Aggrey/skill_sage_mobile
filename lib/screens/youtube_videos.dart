@@ -14,22 +14,51 @@ class _YoutubeVideosScreenState extends ConsumerState<YoutubeVideosScreen> {
   bool isLoading = true;
   String? error;
 
+  final ScrollController _scrollController = ScrollController();
+  int _pageSize = 5;
+  int _currentPage = 0;
+  bool _hasMoreVideos = true;
+  bool _isPaginating = false;
+
   @override
   void initState() {
     super.initState();
-    _loadVideos();
+    _loadVideos(isInitialLoad: true);
+    _scrollController.addListener(_onScroll);
   }
 
-  Future<void> _loadVideos() async {
-    setState(() {
-      isLoading = true;
-      error = null;
-    });
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadVideos({bool isInitialLoad = false}) async {
+    print('[_loadVideos] Function called. isInitialLoad: $isInitialLoad');
+
+    if (isInitialLoad) {
+      setState(() {
+        isLoading = true;
+        error = null;
+        _currentPage = 0; // Reset pagination state
+        _hasMoreVideos = true;
+      });
+    } else {
+      // For pagination, don't show full loading state
+      if (_isPaginating) return; // Prevent multiple simultaneous requests
+      setState(() {
+        _isPaginating = true;
+        error = null;
+      });
+    }
 
     try {
       final youtubeProv = ref.read(youtubeProvider);
 
-      print('Loading YouTube videos for missing skills');
+      print(
+          '[_loadVideos] Before fetch - currentPage: $_currentPage, hasMoreVideos: $_hasMoreVideos');
+      print(
+          '[_loadVideos] Videos list length before modification: ${videos.length}');
 
       String skillName = 'general';
       if (widget.skill is String) {
@@ -40,20 +69,66 @@ class _YoutubeVideosScreenState extends ConsumerState<YoutubeVideosScreen> {
         skillName = widget.skill['skill'] as String;
       }
 
-      final loadedVideos = await youtubeProv.getVideosForSkill(skillName);
+      // Calculate the correct offset
+      final offset = isInitialLoad ? 0 : _currentPage * _pageSize;
+      print('[_loadVideos] Using offset: $offset for page: $_currentPage');
 
-      setState(() {
-        videos = loadedVideos;
-        isLoading = false;
-      });
+      final loadedVideos = await youtubeProv.getVideosForSkill(
+        skillName,
+        offset: offset,
+        limit: _pageSize,
+      );
 
-      print('Loaded ${videos.length} YouTube videos');
+      print('[_loadVideos] Loaded ${loadedVideos.length} videos');
+
+      if (mounted) {
+        setState(() {
+          if (isInitialLoad) {
+            videos = loadedVideos;
+            _currentPage = 1; // Set to 1 after loading first page
+          } else {
+            videos.addAll(loadedVideos);
+            _currentPage++; // Increment page after successful load
+          }
+
+          _hasMoreVideos = loadedVideos.length == _pageSize;
+          isLoading = false;
+          _isPaginating = false;
+
+          print(
+              '[_loadVideos] After update - videos.length: ${videos.length}, currentPage: $_currentPage, hasMoreVideos: $_hasMoreVideos');
+        });
+      }
+
+      print('Total videos loaded: ${videos.length}');
     } catch (e) {
-      setState(() {
-        error = 'Failed to load videos: $e';
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          error = 'Failed to load videos: $e';
+          isLoading = false;
+          _isPaginating = false;
+        });
+      }
       print('Error loading YouTube videos: $e');
+    }
+  }
+
+  Future<void> _onScroll() async {
+    print(
+        '[_onScroll] Scroll event detected. isLoading: $isLoading, isPaginating: $_isPaginating, hasMoreVideos: $_hasMoreVideos, currentPage: $_currentPage');
+    print(
+        '[_onScroll] Scroll position: ${_scrollController.position.pixels}/${_scrollController.position.maxScrollExtent}');
+
+    // Check if we're at the bottom and can load more
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent -
+                100 && // Add small buffer
+        !isLoading &&
+        !_isPaginating &&
+        _hasMoreVideos &&
+        _currentPage < 6) {
+      print('[_onScroll] Triggering pagination load');
+      await _loadVideos(isInitialLoad: false);
     }
   }
 
@@ -80,10 +155,8 @@ class _YoutubeVideosScreenState extends ConsumerState<YoutubeVideosScreen> {
 
   void _shareVideo(YoutubeVideo video) async {
     try {
-      // Use a simple share approach that works across platforms
       final shareText =
           '${video.title}\n\nWatch this ${video.skill} tutorial:\n${video.url}';
-
       await Share.share(shareText);
 
       if (mounted) {
@@ -135,7 +208,7 @@ class _YoutubeVideosScreenState extends ConsumerState<YoutubeVideosScreen> {
         backgroundColor: appTheme.scaffold,
         actions: [
           IconButton(
-            onPressed: _loadVideos,
+            onPressed: () => _loadVideos(isInitialLoad: true),
             icon: Icon(
               CupertinoIcons.refresh,
               size: 20,
@@ -155,19 +228,15 @@ class _YoutubeVideosScreenState extends ConsumerState<YoutubeVideosScreen> {
                         const Icon(Icons.error_outline,
                             size: 64, color: Colors.red),
                         const SizedBox(height: 16),
-                        Text(
-                          'Error loading videos',
-                          style: textTheme.headlineSmall,
-                        ),
+                        Text('Error loading videos',
+                            style: textTheme.headlineSmall),
                         const SizedBox(height: 8),
-                        Text(
-                          error!,
-                          style: textTheme.bodySmall,
-                          textAlign: TextAlign.center,
-                        ),
+                        Text(error!,
+                            style: textTheme.bodySmall,
+                            textAlign: TextAlign.center),
                         const SizedBox(height: 16),
                         ElevatedButton(
-                          onPressed: _loadVideos,
+                          onPressed: () => _loadVideos(isInitialLoad: true),
                           child: const Text('Retry'),
                         ),
                       ],
@@ -181,26 +250,52 @@ class _YoutubeVideosScreenState extends ConsumerState<YoutubeVideosScreen> {
                             const Icon(Icons.video_library_outlined,
                                 size: 64, color: Colors.grey),
                             const SizedBox(height: 16),
-                            Text(
-                              'No videos found',
-                              style: textTheme.headlineSmall,
-                            ),
+                            Text('No videos found',
+                                style: textTheme.headlineSmall),
                             const SizedBox(height: 8),
-                            Text(
-                              'Try searching for a different skill',
-                              style: textTheme.bodySmall,
-                            ),
+                            Text('Try searching for a different skill',
+                                style: textTheme.bodySmall),
                           ],
                         ),
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.all(16),
-                        itemCount: videos.length,
+                        controller: _scrollController,
+                        itemCount: videos.length +
+                            (_hasMoreVideos || _currentPage >= 6 ? 1 : 0),
                         itemBuilder: (context, index) {
+                          if (index == videos.length) {
+                            return _buildLoadMoreIndicator();
+                          }
                           final video = videos[index];
                           return _buildVideoCard(video, textTheme, appTheme);
                         },
                       ),
+      ),
+    );
+  }
+
+  Widget _buildLoadMoreIndicator() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Center(
+        child: _isPaginating
+            ? const CircularProgressIndicator()
+            : _hasMoreVideos && _currentPage < 6
+                ? ElevatedButton(
+                    onPressed: () => _loadVideos(isInitialLoad: false),
+                    child: const Text('Load More Videos'),
+                  )
+                : ElevatedButton(
+                    onPressed: () {
+                      _scrollController.animateTo(
+                        0.0,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeOut,
+                      );
+                    },
+                    child: const Text('Scroll Up'),
+                  ),
       ),
     );
   }
@@ -286,18 +381,16 @@ class _YoutubeVideosScreenState extends ConsumerState<YoutubeVideosScreen> {
                 children: [
                   Text(
                     video.title,
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     video.channelName,
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                    style:
+                        textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -332,9 +425,8 @@ class _YoutubeVideosScreenState extends ConsumerState<YoutubeVideosScreen> {
                           const SizedBox(width: 4),
                           Text(
                             youtubeProv.formatLikeCount(video.likeCount),
-                            style: textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                            style: textTheme.bodySmall
+                                ?.copyWith(color: Colors.grey[600]),
                           ),
                         ],
                       ),

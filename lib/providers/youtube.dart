@@ -77,7 +77,7 @@ class YoutubeProvider extends ChangeNotifier {
   YoutubeProvider(this.ref);
 
   Future<List<YoutubeVideo>> getVideosForSkill(String skill,
-      {String level = "beginner", int maxVideos = 10}) async {
+      {String level = "beginner", int offset = 0, int limit = 10}) async {
     isLoading = true;
     error = null;
     notifyListeners();
@@ -89,7 +89,8 @@ class YoutubeProvider extends ChangeNotifier {
             queryParameters: {
               'skill': skill,
               'level': level,
-              'max_videos': maxVideos,
+              'offset': offset,
+              'limit': limit,
             },
           ));
 
@@ -98,7 +99,13 @@ class YoutubeProvider extends ChangeNotifier {
         final videoList =
             videosData.map((video) => YoutubeVideo.fromJson(video)).toList();
 
-        videos = videoList;
+        // This provider method is meant to fetch a chunk of videos,
+        // so it should not clear or reassign the main `videos` list.
+        // The calling screen (YoutubeVideosScreen) will manage appending.
+        // If the API indicates no more videos, the screen will handle it.
+        // We can optionally return a flag from the API indicating if more videos exist,
+        // but for now, we'll assume if the returned list is less than the limit,
+        // there are no more videos.
         isLoading = false;
         notifyListeners();
         return videoList;
@@ -117,7 +124,7 @@ class YoutubeProvider extends ChangeNotifier {
   }
 
   Future<List<YoutubeVideo>> getVideosForSkills(List<String> skills,
-      {String level = "beginner", int maxVideos = 10}) async {
+      {String level = "beginner", int offset = 0, int limit = 10}) async {
     if (skills.isEmpty) return [];
 
     isLoading = true;
@@ -130,7 +137,8 @@ class YoutubeProvider extends ChangeNotifier {
             queryParameters: {
               'skills': skills,
               'level': level,
-              'max_videos': maxVideos,
+              'offset': offset,
+              'limit': limit,
             },
           ));
 
@@ -139,7 +147,8 @@ class YoutubeProvider extends ChangeNotifier {
         final videoList =
             videosData.map((video) => YoutubeVideo.fromJson(video)).toList();
 
-        videos = videoList;
+        // Similar to getVideosForSkill, this method should return a chunk
+        // of videos and not manage the main `videos` list.
         isLoading = false;
         notifyListeners();
         return videoList;
@@ -158,7 +167,7 @@ class YoutubeProvider extends ChangeNotifier {
   }
 
   Future<List<YoutubeVideo>> getRecommendedVideos(int userId,
-      {int maxVideos = 20}) async {
+      {int offset = 0, int limit = 10}) async {
     isLoading = true;
     error = null;
     notifyListeners();
@@ -167,7 +176,8 @@ class YoutubeProvider extends ChangeNotifier {
       final response = await cather(() => http.get(
             '/youtube/videos/recommended/$userId',
             queryParameters: {
-              'max_videos': maxVideos,
+              'offset': offset,
+              'limit': limit,
             },
           ));
 
@@ -176,7 +186,8 @@ class YoutubeProvider extends ChangeNotifier {
         final videoList =
             videosData.map((video) => YoutubeVideo.fromJson(video)).toList();
 
-        videos = videoList;
+        // Similar to getVideosForSkill, this method should return a chunk
+        // of videos and not manage the main `videos` list.
         isLoading = false;
         notifyListeners();
         return videoList;

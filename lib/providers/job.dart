@@ -151,6 +151,7 @@ class JobProvider extends ChangeNotifier {
     final resp = await cather(() => http.get(
         '/user/me/recommendations?min_match_score=${minMatchScore.toInt()}&limit=$limit'));
     print('API response success: ${resp.success}');
+
     if (resp.success) {
       final responseData = resp.result ?? [];
       print('API response result length: ${responseData.length}');

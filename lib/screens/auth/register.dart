@@ -41,9 +41,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         loading = false;
       });
     } catch (e) {
-      showToast(context, "Some Error Happens");
+      showToast(context, e.toString());
       setState(() {
-        loading = true;
+        loading = false;
       });
     }
   }

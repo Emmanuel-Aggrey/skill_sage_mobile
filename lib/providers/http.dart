@@ -3,6 +3,9 @@ part of '_index.dart';
 // import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 const tokenKey = "user_token";
+final baseUrl = dotenv.env['BASE_URL']!;
+// final baseUrl = "https://skill-sage-backend-njh6.onrender.com";
+// final baseUrl = "http://10.0.2.2:8004";
 
 final httpProvider = Provider((ref) => HttpProvider(ref));
 
@@ -10,10 +13,7 @@ class HttpProvider {
   late Dio http;
   Ref ref;
 
-  HttpProvider(this.ref)
-      : http = Dio(
-          BaseOptions(baseUrl: dotenv.env['BASE_URL']!),
-        ) {
+  HttpProvider(this.ref) : http = Dio(BaseOptions(baseUrl: baseUrl)) {
     init();
   }
 

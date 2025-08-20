@@ -172,6 +172,7 @@ class JobProvider extends ChangeNotifier {
             .length;
         print('External jobs in response: $externalCount');
         print('Internal jobs in response: $internalCount');
+        notifyListeners();
       }
       allRecommendedJobs = jobData;
     } else {

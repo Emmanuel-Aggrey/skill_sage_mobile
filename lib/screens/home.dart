@@ -157,6 +157,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           setState(() {
             _currentIndex = index;
           });
+
+          if (index == 0) {
+            _loadAllJobs();
+          }
         },
         children: _buildScreens(),
       ),

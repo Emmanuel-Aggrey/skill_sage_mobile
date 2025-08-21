@@ -1,13 +1,19 @@
 part of '_index.dart';
 
+// Make sure AppRoutes is imported in your _index.dart file
+// Add this line to your _index.dart: export 'path/to/your/routes.dart';
+
 class SimpleWebSocket {
   WebSocketChannel? _channel;
   Function(String)? onUploadComplete;
+  BuildContext? _context; // Add context to enable navigation
   bool _isConnected = false;
 
   bool get isConnected => _isConnected;
 
-  void connect(String userId, Function(String) onComplete) {
+  void connect(
+      String userId, BuildContext context, Function(String)? onComplete) {
+    _context = context; // Store context for navigation
     onUploadComplete = onComplete;
     print('Attempting to connect WebSocket for user: $userId');
 
@@ -39,7 +45,19 @@ class SimpleWebSocket {
             print('Parsed message: $message');
 
             if (message['type'] == 'jobs_updated') {
-              onUploadComplete?.call(message['message'] ?? 'Upload complete!');
+              final uploadMessage = message['message'] ?? 'Upload complete!';
+
+              // Call the callback if provided
+              onUploadComplete?.call(uploadMessage);
+
+              // Navigate to home route
+              if (_context != null && _context!.mounted) {
+                Navigator.pushNamedAndRemoveUntil(
+                  _context!,
+                  '/home',
+                  (route) => false, // This removes all previous routes
+                );
+              }
             }
           } catch (e) {
             print('Error parsing WebSocket message: $e');
@@ -65,6 +83,7 @@ class SimpleWebSocket {
       print('Disconnecting WebSocket...');
       _channel?.sink.close();
       _isConnected = false;
+      _context = null; // Clear context reference
     }
   }
 }

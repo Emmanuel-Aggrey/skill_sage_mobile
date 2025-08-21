@@ -66,7 +66,7 @@ class UserProvider extends ChangeNotifier {
 
       // Connect websocket with user ID
       if (user != null) {
-        _connectWebSocket(user!.id.toString());
+        _connectWebSocket(user!.id.toString(), _context!);
       }
 
       return resp;
@@ -75,9 +75,9 @@ class UserProvider extends ChangeNotifier {
   }
 
   // Simple websocket connection
-  void _connectWebSocket(String userId) {
+  void _connectWebSocket(String userId, BuildContext context) {
     _webSocket = SimpleWebSocket();
-    _webSocket!.connect(userId, (message) {
+    _webSocket!.connect(userId, context, (message) {
       // Show notification when upload is complete
       _showUploadNotification(message);
       // Reload user data

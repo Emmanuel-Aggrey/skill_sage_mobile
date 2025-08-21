@@ -7,7 +7,11 @@ class UserProvider extends ChangeNotifier {
   User? user;
   Ref ref;
 
+  SimpleWebSocket? _webSocket;
+  BuildContext? _context; // To show notifications
+
   Dio get http => ref.read(httpProvider).http;
+
   UserProvider(this.ref) {
     init();
   }
@@ -25,6 +29,10 @@ class UserProvider extends ChangeNotifier {
     ));
   }
 
+  void setContext(BuildContext context) {
+    _context = context;
+  }
+
   Future<bool> reloadUser() async {
     try {
       final res = await cather(() => http.get("/user/"));
@@ -40,6 +48,7 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
+  // Connect websocket after login - FIXED VERSION
   Future<Resp<User?>> login(String email, String password) async {
     final res = await cather(
       () => http.post("/auth/login", data: {
@@ -54,14 +63,52 @@ class UserProvider extends ChangeNotifier {
       await ref.read(httpProvider).setToken(token);
       final resp = res.parse((data) => User.fromJson(data["user"]));
       user = resp.result;
+
+      // Connect websocket with user ID
+      if (user != null) {
+        _connectWebSocket(user!.id.toString());
+      }
+
       return resp;
     }
     return res.toNull();
   }
 
+  // Simple websocket connection
+  void _connectWebSocket(String userId) {
+    _webSocket = SimpleWebSocket();
+    _webSocket!.connect(userId, (message) {
+      // Show notification when upload is complete
+      _showUploadNotification(message);
+      // Reload user data
+      reloadUser();
+    });
+  }
+
+  // Show simple notification
+  void _showUploadNotification(String message) {
+    if (_context != null) {
+      ScaffoldMessenger.of(_context!).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+          action: SnackBarAction(
+            label: 'OK',
+            textColor: Colors.white,
+            onPressed: () {},
+          ),
+        ),
+      );
+    }
+  }
+
+  // Disconnect websocket on logout - FIXED VERSION
   Future logout() async {
+    _webSocket?.disconnect();
     await ref.read(httpProvider).removeToken();
     user = null;
+    notifyListeners(); // Added this
   }
 
   Future<Resp<User?>> register(
@@ -216,20 +263,30 @@ class UserProvider extends ChangeNotifier {
     return res.toNull();
   }
 
-  Future<Resp<User?>> uploadResume({
-    required resume,
-  }) async {
+  // Updated upload resume method
+  Future<Resp<User?>> uploadResume({required resume}) async {
+    // Show loading message
+    if (_context != null) {
+      ScaffoldMessenger.of(_context!).showSnackBar(
+        SnackBar(
+          content: Text('Uploading resume...'),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+
     FormData formData = FormData.fromMap({
       "file": await MultipartFile.fromFile(
         resume.path,
         filename: resume.path.split('/').last,
       ),
     });
+
     final resp =
         await cather(() => http.post('/user/upload_resume', data: formData));
-    // print(resp);
 
-    reloadUser();
+    // Don't reload here - websocket will handle it
     return resp.toNull();
   }
 
@@ -350,3 +407,32 @@ class UserProvider extends ChangeNotifier {
     return true;
   }
 }
+
+// class SimpleWebSocket {
+//   WebSocketChannel? _channel;
+//   Function(String)? onUploadComplete;
+
+//   void connect(String userId, Function(String) onComplete) {
+//     onUploadComplete = onComplete;
+
+//     try {
+//       _channel = WebSocketChannel.connect(
+//         Uri.parse('ws://10.71.62.222:8004/ws/$userId'),
+//       );
+
+//       _channel!.stream.listen((data) {
+//         final message = jsonDecode(data);
+
+//         if (message['type'] == 'jobs_updated') {
+//           onUploadComplete?.call(message['message'] ?? 'Upload complete!');
+//         }
+//       });
+//     } catch (e) {
+//       print('WebSocket error: $e');
+//     }
+//   }
+
+//   void disconnect() {
+//     _channel?.sink.close();
+//   }
+// }

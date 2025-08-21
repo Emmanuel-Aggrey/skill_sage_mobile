@@ -28,7 +28,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final prov = ref.read(userProvider.notifier);
       final res = await prov.login(_email.text, _password.text);
       if (!res.success) {
-        showToast(context, "unable to login");
+        showToast(context, res.error ?? "Error");
       } else {
         gotoHome();
       }

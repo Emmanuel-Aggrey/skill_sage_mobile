@@ -6,8 +6,10 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     User? user = ref.watch(userProvider).user;
-
     final appTheme = AppTheme.appTheme(context);
+
+    // Add this line to set context for notifications
+    ref.read(userProvider.notifier).setContext(context);
 
     return Scaffold(
       backgroundColor: appTheme.bg1,
@@ -17,17 +19,39 @@ class ProfileScreen extends ConsumerWidget {
             ProfileHeader(
               name: (user != null) ? user.name : '',
             ),
-            const SizedBox(
-              height: 10.0,
-            ),
-            const Expanded(
-              child: Profiles(),
-            ),
+            const SizedBox(height: 10.0),
+            const Expanded(child: Profiles()),
           ],
         ),
       ),
     );
   }
+}
+
+@override
+Widget build(BuildContext context, WidgetRef ref) {
+  User? user = ref.watch(userProvider).user;
+
+  final appTheme = AppTheme.appTheme(context);
+
+  return Scaffold(
+    backgroundColor: appTheme.bg1,
+    body: SafeArea(
+      child: Column(
+        children: [
+          ProfileHeader(
+            name: (user != null) ? user.name : '',
+          ),
+          const SizedBox(
+            height: 10.0,
+          ),
+          const Expanded(
+            child: Profiles(),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 // Header

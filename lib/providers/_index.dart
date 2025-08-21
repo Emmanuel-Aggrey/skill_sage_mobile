@@ -11,6 +11,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:skill_sage_app/models/_index.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'dart:convert';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
 part 'user.dart';
 part 'settings.dart';
 part "http.dart";
@@ -19,6 +22,7 @@ part 'courses.dart';
 part 'job.dart';
 part 'skills_recommender.dart';
 part 'youtube.dart';
+part 'web_socket_channel.dart';
 
 // FutureOr<Resp<dynamic>> cather(Future<Response> Function() func) async {
 //   try {

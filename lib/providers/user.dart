@@ -407,32 +407,3 @@ class UserProvider extends ChangeNotifier {
     return true;
   }
 }
-
-// class SimpleWebSocket {
-//   WebSocketChannel? _channel;
-//   Function(String)? onUploadComplete;
-
-//   void connect(String userId, Function(String) onComplete) {
-//     onUploadComplete = onComplete;
-
-//     try {
-//       _channel = WebSocketChannel.connect(
-//         Uri.parse('ws://10.71.62.222:8004/ws/$userId'),
-//       );
-
-//       _channel!.stream.listen((data) {
-//         final message = jsonDecode(data);
-
-//         if (message['type'] == 'jobs_updated') {
-//           onUploadComplete?.call(message['message'] ?? 'Upload complete!');
-//         }
-//       });
-//     } catch (e) {
-//       print('WebSocket error: $e');
-//     }
-//   }
-
-//   void disconnect() {
-//     _channel?.sink.close();
-//   }
-// }

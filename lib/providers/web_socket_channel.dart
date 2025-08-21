@@ -7,8 +7,7 @@ class SimpleWebSocket {
 
   bool get isConnected => _isConnected;
 
-  void connect(
-      String userId, Function(String) onComplete, BuildContext context) {
+  void connect(String userId, Function(String) onComplete) {
     onUploadComplete = onComplete;
     print('Attempting to connect WebSocket for user: $userId');
 
@@ -41,12 +40,6 @@ class SimpleWebSocket {
 
             if (message['type'] == 'jobs_updated') {
               onUploadComplete?.call(message['message'] ?? 'Upload complete!');
-              // Navigate to home screen after upload is complete
-              // Navigator.pushNamedAndRemoveUntil(
-              //   context,
-              //   AppRoutes.home,
-              //   (route) => false,
-              // );
             }
           } catch (e) {
             print('Error parsing WebSocket message: $e');

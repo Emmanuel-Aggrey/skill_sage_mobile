@@ -4,6 +4,7 @@ part of '_index.dart';
 
 const tokenKey = "user_token";
 final baseUrl = dotenv.env['BASE_URL']!;
+final wsbaseUrl = dotenv.env['WS_BASE_URL']!;
 // final baseUrl = "https://skill-sage-backend-njh6.onrender.com";
 // final baseUrl = "http://10.0.2.2:8004";
 

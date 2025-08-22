@@ -66,7 +66,13 @@ class UserProvider extends ChangeNotifier {
 
       // Connect websocket with user ID - FIXED: Check for context
       if (user != null && _context != null) {
+        print('DEBUG: User ID: ${user!.id}');
+        print('DEBUG: Context available: ${_context != null}');
+        print('DEBUG: About to connect WebSocket...');
         _connectWebSocket(user!.id.toString(), _context!);
+      } else {
+        print(
+            'DEBUG: Cannot connect WebSocket - User: ${user != null}, Context: ${_context != null}');
       }
       // If no context is available, websocket connection will be skipped
       // Call setContext() before login to ensure websocket works
@@ -78,30 +84,53 @@ class UserProvider extends ChangeNotifier {
 
   // Simple websocket connection
   void _connectWebSocket(String userId, BuildContext context) {
+    print('DEBUG: _connectWebSocket called with userId: $userId');
+    print('DEBUG: Context mounted in _connectWebSocket: ${context.mounted}');
+
     _webSocket = SimpleWebSocket();
-    _webSocket!.connect(userId, context, (message) {
-      // Show notification when upload is complete
-      _showUploadNotification(message);
-      // Reload user data
-      reloadUser();
-    });
+    _webSocket!.connect(
+      userId,
+      context,
+      (message) {
+        print('DEBUG: WebSocket callback received message: $message');
+        // Show notification when upload is complete
+        _showUploadNotification(message);
+        // Reload user data
+        reloadUser();
+      },
+      homeRoute: '/home', // Navigate to HomeScreen after CV processing
+    );
+
+    print('DEBUG: WebSocket connect method called');
   }
 
   // Show simple notification
   void _showUploadNotification(String message) {
-    if (_context != null) {
+    if (_context != null && _context!.mounted) {
+      print('DEBUG: Showing upload notification: $message');
       ScaffoldMessenger.of(_context!).showSnackBar(
         SnackBar(
           content: Text(message),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
+          duration:
+              Duration(seconds: 2), // Shorter duration since we'll navigate
+          behavior:
+              SnackBarBehavior.floating, // Make it float so it's more visible
+          margin: EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
           action: SnackBarAction(
-            label: 'OK',
+            label: 'View Jobs',
             textColor: Colors.white,
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(_context!).hideCurrentSnackBar();
+            },
           ),
         ),
       );
+    } else {
+      print('DEBUG: Cannot show notification - context is null or not mounted');
     }
   }
 

@@ -88,7 +88,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void gotoHome() {
-    Navigator.of(context).pushReplacementNamed(AppRoutes.initRoute);
+    Navigator.of(context)
+        .pushReplacementNamed('/home'); // Navigate to HomeScreen
   }
 
   @override

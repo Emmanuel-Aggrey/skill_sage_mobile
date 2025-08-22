@@ -2,8 +2,7 @@ part of '_index.dart';
 
 // Make sure AppRoutes is imported in your _index.dart file
 // Add this line to your _index.dart: export 'path/to/your/routes.dart';
-final wsbaseUrl = dotenv.env['WS_BASE_URL']!;
-// final ws_baseUrl = "ws://10.107.131.222:8004";
+// final wsbaseUrl = dotenv.env['WS_BASE_URL']!;
 
 class SimpleWebSocket {
   WebSocketChannel? _channel;
@@ -14,14 +13,17 @@ class SimpleWebSocket {
   bool get isConnected => _isConnected;
 
   void connect(
-      String userId, BuildContext context, Function(String)? onComplete) {
+      String userId, BuildContext context, Function(String)? onComplete,
+      {String homeRoute = '/home'}) {
     _context = context; // Store context for navigation
     onUploadComplete = onComplete;
-    print('Attempting to connect WebSocket for user: $userId');
+    print('DEBUG: WebSocket connect called with userId: $userId');
+    print('DEBUG: Context mounted: ${context.mounted}');
+    print('DEBUG: HomeRoute: $homeRoute');
 
     try {
       final wsUrl = "$wsbaseUrl/ws/$userId/";
-      print('WebSocket URL: $wsUrl');
+      print('DEBUG: Attempting WebSocket connection to: $wsUrl');
 
       // Add headers that might help with mobile connections
       _channel = WebSocketChannel.connect(
@@ -31,51 +33,65 @@ class SimpleWebSocket {
 
       // Handle connection ready
       _channel!.ready.then((_) {
-        print('WebSocket connected successfully!');
+        print('DEBUG: ✅ WebSocket connected successfully!');
         _isConnected = true;
       }).catchError((error) {
-        print('WebSocket connection failed: $error');
+        print('DEBUG: ❌ WebSocket connection failed: $error');
         _isConnected = false;
       });
 
       // Listen to messages
       _channel!.stream.listen(
         (data) {
-          print('Received WebSocket data: $data');
+          print('DEBUG: 📨 Received WebSocket data: $data');
           try {
             final message = jsonDecode(data);
-            print('Parsed message: $message');
+            print('DEBUG: 📋 Parsed message: $message');
 
             if (message['type'] == 'jobs_updated') {
-              final uploadMessage = message['message'] ?? 'Upload complete!';
+              final uploadMessage =
+                  message['message'] ?? 'CV processing complete! Jobs updated.';
+              print('DEBUG: 🎯 Jobs updated message received: $uploadMessage');
 
-              // Call the callback if provided
+              // Call the callback first to show the notification
               onUploadComplete?.call(uploadMessage);
 
-              // Navigate to home route
-              if (_context != null && _context!.mounted) {
-                Navigator.pushNamedAndRemoveUntil(
-                  _context!,
-                  '/home',
-                  (route) => false, // This removes all previous routes
-                );
-              }
+              // Wait a bit for the notification to show, then navigate
+              Future.delayed(Duration(milliseconds: 3500), () {
+                if (_context != null && _context!.mounted) {
+                  print(
+                      'DEBUG: 🏠 Navigating to home after CV processing: $homeRoute');
+                  // Navigate to home route using the passed route
+                  Navigator.pushNamedAndRemoveUntil(
+                    _context!,
+                    homeRoute, // Use the passed home route
+                    (route) => false, // This removes all previous routes
+                  );
+                } else {
+                  print(
+                      'DEBUG: ❌ Cannot navigate - context null or not mounted');
+                }
+              });
+            } else {
+              print(
+                  'DEBUG: 🤷 Received non-jobs_updated message: ${message['type']}');
             }
           } catch (e) {
-            print('Error parsing WebSocket message: $e');
+            print('DEBUG: ❌ Error parsing WebSocket message: $e');
+            print('DEBUG: Raw data was: $data');
           }
         },
         onError: (error) {
-          print('WebSocket stream error: $error');
+          print('DEBUG: ❌ WebSocket stream error: $error');
           _isConnected = false;
         },
         onDone: () {
-          print('WebSocket connection closed');
+          print('DEBUG: 🔌 WebSocket connection closed');
           _isConnected = false;
         },
       );
     } catch (e) {
-      print('WebSocket connection error: $e');
+      print('DEBUG: ❌ WebSocket connection exception: $e');
       _isConnected = false;
     }
   }

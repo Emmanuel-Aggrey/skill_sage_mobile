@@ -31,6 +31,15 @@ class UserProvider extends ChangeNotifier {
 
   void setContext(BuildContext context) {
     _context = context;
+    print('DEBUG: Context updated - mounted: ${context.mounted}');
+  }
+
+  // Call this method from screens that should be able to receive WebSocket notifications
+  void updateContext(BuildContext context) {
+    if (context.mounted) {
+      _context = context;
+      print('DEBUG: Context updated from screen - mounted: ${context.mounted}');
+    }
   }
 
   Future<bool> reloadUser() async {
@@ -93,8 +102,26 @@ class UserProvider extends ChangeNotifier {
       context,
       (message) {
         print('DEBUG: WebSocket callback received message: $message');
-        // Show notification when upload is complete
-        _showUploadNotification(message);
+        // Update context to current context when callback is triggered
+        if (_context != null && _context!.mounted) {
+          print('DEBUG: Using stored context for navigation');
+          // Show notification when upload is complete
+          _showUploadNotification(message);
+          // Navigate to home after showing notification
+          Future.delayed(Duration(milliseconds: 1500), () {
+            if (_context != null && _context!.mounted) {
+              print('DEBUG: 🏠 Navigating to home from UserProvider callback');
+              Navigator.pushNamedAndRemoveUntil(
+                _context!,
+                '/home',
+                (route) => false,
+              );
+            }
+          });
+        } else {
+          print(
+              'DEBUG: No valid context available for notification/navigation');
+        }
         // Reload user data
         reloadUser();
       },
@@ -300,9 +327,9 @@ class UserProvider extends ChangeNotifier {
     if (_context != null) {
       ScaffoldMessenger.of(_context!).showSnackBar(
         SnackBar(
-          content: Text('Uploading resume...'),
+          content: Text('Uploading resume, please wait...'),
           backgroundColor: Colors.blue,
-          duration: Duration(seconds: 2),
+          duration: Duration(seconds: 10),
         ),
       );
     }

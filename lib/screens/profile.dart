@@ -8,7 +8,6 @@ class ProfileScreen extends ConsumerWidget {
     User? user = ref.watch(userProvider).user;
     final appTheme = AppTheme.appTheme(context);
 
-    // Add this line to set context for notifications
     ref.read(userProvider.notifier).setContext(context);
 
     return Scaffold(
@@ -274,6 +273,15 @@ class Profiles extends ConsumerStatefulWidget {
 }
 
 class _ProfilesState extends ConsumerState<Profiles> {
+  @override
+  void initState() {
+    super.initState();
+    // Reload user data in the background without blocking the UI
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(userProvider.notifier).reloadUser();
+    });
+  }
+
   final List<File?> _resume = [];
   bool _isSkillsExpanded = false;
   Future<void> pickResume() async {

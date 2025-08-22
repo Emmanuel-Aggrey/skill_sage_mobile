@@ -56,14 +56,14 @@ class _JobPostScreenState extends ConsumerState<JobPostScreen> {
   Future<void> add(WidgetRef ref, int id, BuildContext context) async {
     final resp = await ref.read(jobProvider).addBookmark(id: id);
     if (resp) {
-      showToast(context, 'added');
+      showToast(context, 'Job saved');
     }
   }
 
   Future<void> apply(WidgetRef ref, int id, BuildContext context) async {
     final resp = await ref.read(jobProvider).addApplication(id: id);
     if (resp) {
-      showToast(context, 'added');
+      showToast(context, 'Application sent');
     }
   }
 
@@ -73,83 +73,63 @@ class _JobPostScreenState extends ConsumerState<JobPostScreen> {
     final appTheme = AppTheme.appTheme(context);
     final size = MediaQuery.of(context).size;
     final user = ref.watch(userProvider).user;
+
     return SafeArea(
       child: Column(
         children: [
-          // Container(
-          //   width: double.infinity,
-          //   color: appTheme.scaffold,
-          //   child: ListTile(
-          //     title: Center(
-          //       child: Text(
-          //         "Job Posts",
-          //         style: textTheme.headlineMedium,
-          //       ),
-          //     ),
-          //   ),
-          // ),
-          const SizedBox(
-            height: 20.0,
-          ),
+          const SizedBox(height: 16),
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 15),
             child: CupertinoSearchTextField(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
+              prefixInsets: const EdgeInsets.only(left: 12),
+              suffixInsets: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(15),
                 color: appTheme.scaffold,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               style: textTheme.titleSmall,
-              placeholder: "Search jobs...",
+              placeholder: "Search jobs by title, company, or skill...",
               onChanged: _filterJobs,
             ),
           ),
-          const SizedBox(
-            height: 20.0,
-          ),
+          const SizedBox(height: 20),
           Expanded(
             child: RefreshIndicator(
               onRefresh: _loadJobs,
               child: filteredJobs.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset("assets/images/not_found.png",
-                              height: 100),
-                          const SizedBox(height: 10),
-                          Text(
-                            searchQuery.isEmpty
-                                ? "No jobs available"
-                                : "No jobs found for '$searchQuery'",
-                            style: textTheme.labelSmall,
-                          ),
-                          TextButton(
-                            onPressed: _loadJobs,
-                            child: const Text("Reload"),
-                          ),
-                        ],
-                      ),
-                    )
+                  ? _buildEmptyState(textTheme)
                   : ListView.builder(
-                      shrinkWrap: true,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                       itemCount: filteredJobs.length,
                       itemBuilder: (context, index) {
                         final job = filteredJobs[index];
-                        return GestureDetector(
-                          onTap: () => showModalBottomSheet(
-                            backgroundColor: Colors.transparent,
-                            context: context,
-                            builder: (context) => _buildModal(size, appTheme,
-                                textTheme, job, ref, context, user),
-                          ),
-                          child: JobCard(
-                            title: job['title'],
-                            company: job['company'] ?? 'Company',
-                            location: job['location'],
-                            datePosted: "Due ${job['expiry']}",
-                            skills: job['skills'],
-                            img: job['image'],
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: GestureDetector(
+                            onTap: () => showModalBottomSheet(
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              context: context,
+                              builder: (context) => _buildModal(size, appTheme,
+                                  textTheme, job, ref, context, user),
+                            ),
+                            child: JobCard(
+                              title: job['title'],
+                              company: job['company'] ?? 'Company',
+                              location: job['location'],
+                              datePosted: "Due ${job['expiry']}",
+                              skills: job['skills'],
+                              img: job['image'],
+                            ),
                           ),
                         );
                       },
@@ -161,234 +141,141 @@ class _JobPostScreenState extends ConsumerState<JobPostScreen> {
     );
   }
 
-  Container _buildModal(size, appTheme, textTheme, data, ref, context, user) {
+  Widget _buildEmptyState(TextTheme textTheme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset("assets/images/not_found.png", height: 140),
+          const SizedBox(height: 16),
+          Text(
+            searchQuery.isEmpty
+                ? "No jobs available at the moment"
+                : "No results for '$searchQuery'",
+            style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 10),
+          ElevatedButton.icon(
+            onPressed: _loadJobs,
+            icon: const Icon(Icons.refresh),
+            label: const Text("Reload"),
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModal(size, appTheme, textTheme, data, ref, context, user) {
     return Container(
-      height: size.height,
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(15.0),
-          topRight: Radius.circular(15.0),
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
         ),
         color: appTheme.scaffold,
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 10),
-            Text(data['title'], style: textTheme.headlineMedium),
-            const SizedBox(height: 10),
-            ListTile(
-              minLeadingWidth: 0,
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                height: 60,
-                width: 60,
-                // padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: appTheme.primary,
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.9,
+        maxChildSize: 0.95,
+        builder: (_, controller) => SingleChildScrollView(
+          controller: controller,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  height: 5,
+                  width: 50,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[400],
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  image: (data['image'] == null)
-                      ? const DecorationImage(
-                          image: AssetImage('assets/images/default.jpg'),
-                          fit: BoxFit.cover,
-                        )
-                      : DecorationImage(
-                          image: NetworkImage(data['image']),
-                          fit: BoxFit.cover,
-                        ),
-                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              title: Text("Posted by", style: textTheme.labelMedium),
-              subtitle: Text("Fintech", style: textTheme.bodySmall),
-              trailing:
-                  Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Text("Expiry Date", style: textTheme.labelMedium),
-                Text(data['expiry'], style: textTheme.bodySmall),
-                const SizedBox(height: 10),
-                Text("Ghc${data['salary']}/year",
-                    style: textTheme.headlineMedium)
-              ]),
-            ),
-            const SizedBox(height: 10),
-            Text(data['location'], style: textTheme.headlineMedium),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: size.height * .25,
-              child: ListView(shrinkWrap: true, children: [
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text("Job Description", style: textTheme.headlineMedium),
-                  const SizedBox(height: 10),
-                  Text(
-                    data['description'],
-                    style: textTheme.bodySmall,
-                  )
-                ]),
-                const SizedBox(height: 10),
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(
-                    children: [
-                      Text("Requirements", style: textTheme.headlineMedium),
-                      const Spacer(),
-                      if (data['skills'] != null && data['skills'].isNotEmpty)
-                        TextButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            _showCoursesForSkills(context, data['skills']);
-                          },
-                          icon: const Icon(Icons.school, size: 16),
-                          label: const Text('View Courses'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.blue,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  for (int i = 0; i < data['requirements'].length; i++)
-                    Text(
-                      data['requirements'][i],
-                      style: textTheme.bodySmall,
-                    )
-                ]),
-              ]),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: SizedBox(
-                width: double.infinity,
-                height: 20,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    SizedBox(
-                      width: size.width * .4,
-                      child: ElevatedButton(
-                          onPressed: () {
-                            if (user.resume.isEmpty &&
-                                user.experience.isEmpty &&
-                                user.education.isEmpty) {
-                              showToast(context,
-                                  "Upload Resume or Update your Profile");
-                            } else {
-                              apply(ref, data['id'], context);
-                            }
-                            Navigator.pop(context);
-                          },
-                          child: const Text("Apply")),
-                    ),
-                    SizedBox(
-                      width: size.width * .4,
-                      child: TextButton(
-                        style: TextButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5),
-                            side: BorderSide(
-                              color: appTheme.txt,
-                            ),
-                          ),
-                        ),
-                        onPressed: () {
-                          add(ref, data['id'], context);
-                          Navigator.pop(context);
-                        },
-                        child: Text(
-                          "Save",
-                          style: textTheme.bodySmall,
-                        ),
+              Text(data['title'], style: textTheme.headlineMedium),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.location_on, color: appTheme.primary, size: 18),
+                  const SizedBox(width: 6),
+                  Text(data['location'], style: textTheme.bodyMedium),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _buildSection("Job Description", data['description'], textTheme),
+              const SizedBox(height: 16),
+              _buildSection("Requirements",
+                  (data['requirements'] as List).join("\n• "), textTheme),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.send),
+                      onPressed: () {
+                        if (user.resume.isEmpty &&
+                            user.experience.isEmpty &&
+                            user.education.isEmpty) {
+                          showToast(
+                              context, "Upload Resume or Update your Profile");
+                        } else {
+                          apply(ref, data['id'], context);
+                        }
+                        Navigator.pop(context);
+                      },
+                      label: const Text("Apply Now"),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                     ),
-                    // CustomButton(title: 'Save'),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.bookmark_border),
+                      onPressed: () {
+                        add(ref, data['id'], context);
+                        Navigator.pop(context);
+                      },
+                      label: const Text("Save"),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  void _showCoursesForSkills(BuildContext context, List skills) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: Column(
+  Widget _buildSection(String title, String content, TextTheme textTheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  const Text(
-                    'Learn Required Skills',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: skills.length,
-                itemBuilder: (context, index) {
-                  final skill = skills[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.blue[100],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.school,
-                          color: Colors.blue,
-                        ),
-                      ),
-                      title: Text(
-                        skill,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      subtitle: const Text('Tap to view available courses'),
-                      trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.coursesRoute,
-                          arguments: {"skill": skill},
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
+            Icon(Icons.label, size: 18, color: Colors.grey[600]),
+            const SizedBox(width: 6),
+            Text(title, style: textTheme.headlineSmall),
           ],
         ),
-      ),
+        const SizedBox(height: 8),
+        Text(content, style: textTheme.bodySmall),
+      ],
     );
   }
 }

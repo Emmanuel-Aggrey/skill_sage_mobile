@@ -30,7 +30,7 @@ class HttpProvider {
     try {
       final pref = await SharedPreferences.getInstance();
       final token = pref.getString(tokenKey);
-      print("token == $token");
+      // print("token == $token");
       if (token != null) {
         await init(pref);
         return true;
@@ -47,10 +47,10 @@ class HttpProvider {
   }
 
   Future setToken(String token) async {
-    print("setting token == $token");
+    // print("setting token == $token");
     final pref = await SharedPreferences.getInstance();
-    var b = await pref.setString(tokenKey, token);
-    print("setting token $b");
+    await pref.setString(tokenKey, token);
+    // print("setting token $b");
     http.options.headers["Authorization"] = "Bearer $token";
   }
 }

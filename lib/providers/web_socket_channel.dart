@@ -2,6 +2,8 @@ part of '_index.dart';
 
 // Make sure AppRoutes is imported in your _index.dart file
 // Add this line to your _index.dart: export 'path/to/your/routes.dart';
+final wsbaseUrl = dotenv.env['WS_BASE_URL']!;
+// final ws_baseUrl = "ws://10.107.131.222:8004";
 
 class SimpleWebSocket {
   WebSocketChannel? _channel;
@@ -18,7 +20,7 @@ class SimpleWebSocket {
     print('Attempting to connect WebSocket for user: $userId');
 
     try {
-      final wsUrl = "ws://10.71.62.222:8004/ws/$userId/";
+      final wsUrl = "$wsbaseUrl/ws/$userId/";
       print('WebSocket URL: $wsUrl');
 
       // Add headers that might help with mobile connections

@@ -16,33 +16,74 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool rememberMe = false;
   bool loading = false;
 
+  @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
   Future<void> login() async {
-    if (!_key.currentState!.validate()) {
+    // Safer validation check
+    if (_key.currentState?.validate() != true) {
+      print("DEBUG: Validation failed");
       return;
     }
+
+    if (!mounted) return;
+
+    print("DEBUG: Setting loading to true");
     setState(() {
       loading = true;
     });
 
     try {
+      print("DEBUG: Getting provider");
       final prov = ref.read(userProvider.notifier);
+
+      // Set context before login to avoid null context error
+      prov.setContext(context);
+
+      print("DEBUG: Calling login with email: ${_email.text}");
       final res = await prov.login(_email.text, _password.text);
+
+      print("DEBUG: Login response received: ${res?.success}");
+
+      if (!mounted) {
+        print("DEBUG: Widget not mounted after login");
+        return;
+      }
+
+      // Add null check for res
+      if (res == null) {
+        print("DEBUG: Response is null");
+        showToast(context, "Login failed - no response");
+        return;
+      }
+
       if (!res.success) {
+        print("DEBUG: Login failed: ${res.error}");
         showToast(context, res.error ?? "Error");
       } else {
+        print("DEBUG: Login successful, navigating to home");
         gotoHome();
       }
-      setState(() {
-        loading = false;
-      });
-      // handle success
-    } catch (e) {
-      print(e);
-      showToast(context, "Unexpected err");
+    } catch (e, stackTrace) {
+      print("DEBUG: Exception caught: $e");
+      print("DEBUG: Stack trace: $stackTrace");
+      if (mounted) {
+        showToast(context, "Unexpected error: $e");
+      }
     } finally {
-      setState(() {
-        loading = false;
-      });
+      print("DEBUG: Finally block - setting loading to false");
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+        print("DEBUG: Loading set to false successfully");
+      } else {
+        print("DEBUG: Widget not mounted in finally block");
+      }
     }
   }
 
@@ -118,7 +159,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               onChanged: (value) => {
                                 setState(() {
                                   rememberMe = value ?? false;
-                                  loading = value ?? false;
+                                  // Removed the incorrect loading assignment
                                 })
                               },
                               shape: RoundedRectangleBorder(

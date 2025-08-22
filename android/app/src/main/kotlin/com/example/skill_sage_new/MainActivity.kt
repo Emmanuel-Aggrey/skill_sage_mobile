@@ -1,4 +1,4 @@
-package com.example.skill_sage_new
+package com.example.skill_sage
 
 import io.flutter.embedding.android.FlutterActivity
 

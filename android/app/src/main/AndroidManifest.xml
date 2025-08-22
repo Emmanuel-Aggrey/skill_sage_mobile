@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.skill_sage_new">
+    package="com.example.skill_sage">
     <application
-        android:label="skill_sage_new"
+        android:label="skill_sage"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

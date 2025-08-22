@@ -64,10 +64,12 @@ class UserProvider extends ChangeNotifier {
       final resp = res.parse((data) => User.fromJson(data["user"]));
       user = resp.result;
 
-      // Connect websocket with user ID
-      if (user != null) {
+      // Connect websocket with user ID - FIXED: Check for context
+      if (user != null && _context != null) {
         _connectWebSocket(user!.id.toString(), _context!);
       }
+      // If no context is available, websocket connection will be skipped
+      // Call setContext() before login to ensure websocket works
 
       return resp;
     }
@@ -333,7 +335,7 @@ class UserProvider extends ChangeNotifier {
       final resp = await cather(
         () => http.get('/user/skills', queryParameters: {"q": skill}),
       );
-      print('res: ${resp.result}');
+      // print('res: ${resp.result}');
       if (!resp.success) return throw Exception("failed");
       final Resp<List<Skills?>> data = resp.parseList(Skills.fromJson);
       skills = data.result;

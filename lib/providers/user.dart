@@ -102,6 +102,15 @@ class UserProvider extends ChangeNotifier {
       context,
       (message) {
         print('DEBUG: WebSocket callback received message: $message');
+
+        // Stop upload state when message is received
+        _webSocket?.stopUpload();
+
+        // Hide any existing loading snackbar
+        if (_context != null && _context!.mounted) {
+          ScaffoldMessenger.of(_context!).hideCurrentSnackBar();
+        }
+
         // Update context to current context when callback is triggered
         if (_context != null && _context!.mounted) {
           print('DEBUG: Using stored context for navigation');
@@ -160,6 +169,9 @@ class UserProvider extends ChangeNotifier {
       print('DEBUG: Cannot show notification - context is null or not mounted');
     }
   }
+
+  // Getter for WebSocket access
+  SimpleWebSocket? get webSocket => _webSocket;
 
   // Disconnect websocket on logout - FIXED VERSION
   Future logout() async {
@@ -321,15 +333,34 @@ class UserProvider extends ChangeNotifier {
     return res.toNull();
   }
 
-  // Updated upload resume method
+  // Updated upload resume method with persistent WebSocket
   Future<Resp<User?>> uploadResume({required resume}) async {
-    // Show loading message
+    // Start upload process - this will keep WebSocket connected
+    _webSocket?.startUpload();
+
+    // Show persistent loading message
     if (_context != null) {
       ScaffoldMessenger.of(_context!).showSnackBar(
         SnackBar(
-          content: Text('Uploading resume, please wait...'),
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Text('Uploading resume, please wait...'),
+              ),
+            ],
+          ),
           backgroundColor: Colors.blue,
-          duration: Duration(seconds: 10),
+          duration: Duration(minutes: 5), // Longer duration for upload
+          behavior: SnackBarBehavior.fixed,
         ),
       );
     }
@@ -350,13 +381,12 @@ class UserProvider extends ChangeNotifier {
 
   Future<Resp<User?>> uploadProfileImage(File imageFile) async {
     FormData formData = FormData.fromMap({
-      "file": await MultipartFile.fromFile(
+      "img": await MultipartFile.fromFile(
         imageFile.path,
         filename: imageFile.path.split('/').last,
       ),
     });
-    final resp = await cather(
-        () => http.post('/user/upload_profile_image', data: formData));
+    final resp = await cather(() => http.post('/user/image', data: formData));
 
     reloadUser();
     return resp.toNull();

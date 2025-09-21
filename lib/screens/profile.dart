@@ -7,8 +7,9 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     User? user = ref.watch(userProvider).user;
     final appTheme = AppTheme.appTheme(context);
+    final userNotifier = ref.read(userProvider.notifier);
 
-    ref.read(userProvider.notifier).setContext(context);
+    userNotifier.setContext(context);
 
     return Scaffold(
       backgroundColor: appTheme.bg1,
@@ -25,32 +26,6 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
-}
-
-@override
-Widget build(BuildContext context, WidgetRef ref) {
-  User? user = ref.watch(userProvider).user;
-
-  final appTheme = AppTheme.appTheme(context);
-
-  return Scaffold(
-    backgroundColor: appTheme.bg1,
-    body: SafeArea(
-      child: Column(
-        children: [
-          ProfileHeader(
-            name: (user != null) ? user.name : '',
-          ),
-          const SizedBox(
-            height: 10.0,
-          ),
-          const Expanded(
-            child: Profiles(),
-          ),
-        ],
-      ),
-    ),
-  );
 }
 
 // Header
@@ -284,6 +259,7 @@ class _ProfilesState extends ConsumerState<Profiles> {
 
   final List<File?> _resume = [];
   bool _isSkillsExpanded = false;
+
   Future<void> pickResume() async {
     final resume = ref.read(userProvider.notifier);
     try {
@@ -293,13 +269,33 @@ class _ProfilesState extends ConsumerState<Profiles> {
       );
       if (result != null) {
         File file = File(result.files.single.path.toString());
-        await resume.uploadResume(resume: file);
-        setState(
-          () => _resume.add(file),
-        );
+
+        try {
+          await resume.uploadResume(resume: file);
+          setState(() {
+            _resume.add(file);
+          });
+        } catch (e) {
+          // Show error message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Upload failed: ${e.toString()}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
       }
     } catch (err) {
-      throw Exception(err);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${err.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

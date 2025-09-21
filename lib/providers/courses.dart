@@ -42,4 +42,12 @@ class CourseProvider extends ChangeNotifier {
     notifyListeners();
     return resp;
   }
+
+  Future<bool> addBookmark({required String jobId}) async {
+    final resp = await cather(() => http.post('/job/bookmark/$jobId'));
+    print('Bookmark response: ${resp.success}');
+    if (!resp.success) return throw Exception("failed");
+    notifyListeners();
+    return true;
+  }
 }

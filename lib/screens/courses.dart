@@ -29,14 +29,14 @@ class CoursesScreen extends ConsumerWidget {
         elevation: 0,
         backgroundColor: appTheme.scaffold,
         actions: [
-          IconButton(
-            onPressed: () {},
-            icon: Icon(
-              CupertinoIcons.bookmark,
-              size: 20,
-              color: appTheme.txt,
-            ),
-          ),
+          // IconButton(
+          //   onPressed: () {},
+          //   icon: Icon(
+          //     CupertinoIcons.bookmark,
+          //     size: 20,
+          //     color: appTheme.txt,
+          //   ),
+          // ),
         ],
       ),
       body: SafeArea(

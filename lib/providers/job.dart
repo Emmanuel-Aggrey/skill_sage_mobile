@@ -29,7 +29,7 @@ class JobProvider extends ChangeNotifier {
   }
 
   Future loadJobs() async {
-    final resp = await cather(() => http.get('/job'));
+    final resp = await cather(() => http.get('/job/'));
     if (!resp.success) return throw Exception("failed");
     notifyListeners();
     return resp;

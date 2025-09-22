@@ -168,28 +168,34 @@ class _EditSkillScreenState extends ConsumerState<EditSkillScreen> {
                           : Wrap(
                               spacing: 20,
                               children: user.skills!
-                                  .map(
-                                    (e) => Chip(
-                                      labelPadding: const EdgeInsets.only(
-                                        left: 4,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(9.0),
-                                      ),
-                                      label: Text(e['name'].toString()),
-                                      deleteIcon: Icon(Icons.close,
-                                          size: 18, color: appTheme.primary1),
-                                      onDeleted: () {
-                                        final skill = user.skills;
-                                        final List id = skill!
-                                            .where((l) => l != e)
-                                            .map((k) => k["id"])
-                                            .toList();
-                                        addSkill(id: id);
-                                      },
-                                    ),
-                                  )
+                                  .map((e) => Chip(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(9.0),
+                                        ),
+                                        label: Text(e['name'].toString()),
+                                        deleteIcon: Container(
+                                          padding: const EdgeInsets.all(2),
+                                          decoration: const BoxDecoration(
+                                            color: Color.fromARGB(
+                                                255, 241, 124, 118),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.close,
+                                            size: 10,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        onDeleted: () {
+                                          final skill = user.skills;
+                                          final List id = skill!
+                                              .where((l) => l != e)
+                                              .map((k) => k["id"])
+                                              .toList();
+                                          addSkill(id: id);
+                                        },
+                                      ))
                                   .toList(),
                             )
                 ],

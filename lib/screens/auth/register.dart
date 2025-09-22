@@ -49,7 +49,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   void gotoHome() {
-    Navigator.of(context).pushReplacementNamed(AppRoutes.initRoute);
+    Navigator.of(context).pushReplacementNamed('/profile');
   }
 
   @override

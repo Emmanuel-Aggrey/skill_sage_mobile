@@ -24,64 +24,6 @@ part 'skills_recommender.dart';
 part 'youtube.dart';
 part 'web_socket_channel.dart';
 
-// FutureOr<Resp<dynamic>> cather(Future<Response> Function() func) async {
-//   try {
-//     final res = await func.call();
-//     return Resp(success: res.data["success"], result: res.data["result"]);
-//   } catch (e) {
-//     if (e is DioException) {
-//       if (e.response != null) {
-//         print('err: ${e.response!.data}');
-//         final res = e.response!;
-
-//         // Handle null response data
-//         if (res.data == null) {
-//           return Resp(
-//               success: false,
-//               error: "Network error: ${res.statusMessage ?? 'Unknown error'}");
-//         }
-
-//         // Handle different error response formats
-//         final responseData = res.data;
-
-//         // Check if it's a simple string error
-//         if (responseData is String) {
-//           return Resp(success: false, error: responseData);
-//         }
-
-//         // Check if it's a map with detail field
-//         if (responseData is Map<String, dynamic>) {
-//           final detail = responseData["detail"];
-
-//           if (detail is String) {
-//             return Resp(success: false, error: detail);
-//           }
-
-//           // Handle nested error structure
-//           if (detail is Map<String, dynamic> && detail["result"] != null) {
-//             final result = detail["result"];
-//             if (result is List && result.length > 1 && result[1] is Map) {
-//               final errorResult = result[1]["result"];
-//               return Resp(
-//                   success: detail["success"] ?? false,
-//                   error: errorResult?.toString() ?? "Unknown error");
-//             }
-//           }
-
-//           // Handle direct error message
-//           final message = responseData["message"] ??
-//               responseData["error"] ??
-//               "Unknown error";
-//           return Resp(success: false, error: message.toString());
-//         }
-
-//         return Resp(success: false, error: "Unexpected error format");
-//       }
-//     }
-//     rethrow;
-//   }
-// }
-
 FutureOr<Resp<dynamic>> cather(Future<Response> Function() func) async {
   try {
     final res = await func.call();
